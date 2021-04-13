@@ -1,154 +1,172 @@
-﻿namespace SETUNA.Main
+﻿using System.Drawing;
+using System.Drawing.Drawing2D;
+using System.Windows.Forms;
+
+namespace SETUNA.Main
 {
-    using System;
-    using System.ComponentModel;
-    using System.Drawing;
-    using System.Drawing.Drawing2D;
-    using System.Windows.Forms;
-
-    public sealed class CaptureSelLine : Form
+    // Token: 0x02000071 RID: 113
+    public sealed partial class CaptureSelLine : BaseForm
     {
-        private SelLineType _linetype;
-        private IContainer components;
-        private static int DashOffset;
-        private int lastw;
-        private int lastx;
-        private float[] pat;
-        private Pen penBack;
-        private Pen penLine;
-        private Pen penWhite;
-        private Point ptSel;
-        private Size szSel;
-
-        public CaptureSelLine()
-        {
-            this.InitializeComponent();
-            base.Width = 1;
-            base.Height = 1;
-            this._linetype = SelLineType.Horizon;
-        }
-
-        public CaptureSelLine(SelLineType linetype, bool issolid, Color linecolor)
-        {
-            this._linetype = linetype;
-            this.InitializeComponent();
-            this.pat = new float[] { 4f, 4f };
-            base.SetStyle(ControlStyles.SupportsTransparentBackColor, true);
-            this.penBack = new Pen(new SolidBrush(Color.Fuchsia), 1f);
-            this.penLine = new Pen(linecolor, 1f);
-            this.SetPen(issolid, linecolor);
-            base.TransparencyKey = Color.Fuchsia;
-            this.penWhite = new Pen(new SolidBrush(Color.White), 1f);
-        }
-
+        // Token: 0x060003B3 RID: 947 RVA: 0x00016470 File Offset: 0x00014670
         public static void AddDashOffset()
         {
-            DashOffset++;
-            if (DashOffset > 7)
+            CaptureSelLine.DashOffset++;
+            if (CaptureSelLine.DashOffset > 7)
             {
-                DashOffset = 0;
+                CaptureSelLine.DashOffset = 0;
             }
         }
 
+        // Token: 0x060003B4 RID: 948 RVA: 0x0001648C File Offset: 0x0001468C
+        public CaptureSelLine()
+        {
+            InitializeComponent();
+            base.Width = 1;
+            base.Height = 1;
+            _linetype = SelLineType.Horizon;
+        }
+
+        // Token: 0x060003B5 RID: 949 RVA: 0x000164B0 File Offset: 0x000146B0
+        public CaptureSelLine(SelLineType linetype, bool issolid, Color linecolor)
+        {
+            _linetype = linetype;
+            InitializeComponent();
+            pat = new float[]
+            {
+                4f,
+                4f
+            };
+            base.SetStyle(ControlStyles.SupportsTransparentBackColor, true);
+            penBack = new Pen(new SolidBrush(Color.Fuchsia), 1f);
+            penLine = new Pen(linecolor, 1f);
+            SetPen(issolid, linecolor);
+            base.TransparencyKey = Color.Fuchsia;
+            penWhite = new Pen(new SolidBrush(Color.White), 1f);
+        }
+
+        protected override CreateParams CreateParams
+        {
+            get
+            {
+                // 鼠标穿透窗体
+                var cp = base.CreateParams;
+                cp.ExStyle |= 0x00000020; //WS_EX_TRANSPARENT
+                return cp;
+            }
+        }
+
+        public bool ShowWhiteBackground { set; get; } = true;
+
+
+        // Token: 0x060003B6 RID: 950 RVA: 0x00016554 File Offset: 0x00014754
+        public void SetPen(bool issolid, Color linecolor)
+        {
+            if (penLine.Color.ToArgb() != linecolor.ToArgb())
+            {
+                penLine = new Pen(linecolor, 1f);
+            }
+            if (!issolid)
+            {
+                penLine.DashStyle = DashStyle.Dash;
+                penLine.DashPattern = pat;
+                return;
+            }
+            penLine.DashStyle = DashStyle.Solid;
+        }
+
+        // Token: 0x060003B7 RID: 951 RVA: 0x000165BC File Offset: 0x000147BC
         private void CaptureSelLine_Paint(object sender, PaintEventArgs e)
         {
-            if (this.penLine != null)
+            if (penLine == null)
             {
-                if (this._linetype == SelLineType.Horizon)
+                return;
+            }
+            if (_linetype == SelLineType.Horizon)
+            {
+                if (ShowWhiteBackground)
                 {
-                    e.Graphics.DrawLine(this.penWhite, new Point(this.ptSel.X, 0), new Point((this.ptSel.X + this.szSel.Width) - 1, 0));
-                    e.Graphics.DrawLine(this.penLine, new Point(this.ptSel.X + DashOffset, 0), new Point((this.ptSel.X + this.szSel.Width) - 1, 0));
-                    if (DashOffset > 4)
-                    {
-                        e.Graphics.DrawLine(this.penLine, new Point(this.ptSel.X, 0), new Point(this.ptSel.X + (DashOffset - 4), 0));
-                    }
+                    e.Graphics.DrawLine(penWhite, new Point(ptSel.X, 0), new Point(ptSel.X + szSel.Width - 1, 0));
                 }
-                else
+
+                e.Graphics.DrawLine(penLine, new Point(ptSel.X + CaptureSelLine.DashOffset, 0), new Point(ptSel.X + szSel.Width - 1, 0));
+                if (CaptureSelLine.DashOffset > 4)
                 {
-                    e.Graphics.DrawLine(this.penWhite, new Point(0, this.ptSel.Y), new Point(0, (this.ptSel.Y + this.szSel.Height) - 1));
-                    e.Graphics.DrawLine(this.penLine, new Point(0, this.ptSel.Y + DashOffset), new Point(0, (this.ptSel.Y + this.szSel.Height) - 1));
-                    if (DashOffset > 4)
-                    {
-                        e.Graphics.DrawLine(this.penLine, new Point(0, this.ptSel.Y), new Point(0, this.ptSel.Y + (DashOffset - 4)));
-                    }
+                    e.Graphics.DrawLine(penLine, new Point(ptSel.X, 0), new Point(ptSel.X + (CaptureSelLine.DashOffset - 4), 0));
+                    return;
+                }
+            }
+            else
+            {
+                if (ShowWhiteBackground)
+                {
+                    e.Graphics.DrawLine(penWhite, new Point(0, ptSel.Y), new Point(0, ptSel.Y + szSel.Height - 1));
+                }
+
+                e.Graphics.DrawLine(penLine, new Point(0, ptSel.Y + CaptureSelLine.DashOffset), new Point(0, ptSel.Y + szSel.Height - 1));
+                if (CaptureSelLine.DashOffset > 4)
+                {
+                    e.Graphics.DrawLine(penLine, new Point(0, ptSel.Y), new Point(0, ptSel.Y + (CaptureSelLine.DashOffset - 4)));
                 }
             }
         }
 
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing && (this.components != null))
-            {
-                this.components.Dispose();
-            }
-            base.Dispose(disposing);
-        }
-
-        private void InitializeComponent()
-        {
-            base.SuspendLayout();
-            base.AutoScaleMode = AutoScaleMode.None;
-            this.BackColor = Color.Fuchsia;
-            this.BackgroundImageLayout = ImageLayout.None;
-            base.ClientSize = new Size(1, 1);
-            base.ControlBox = false;
-            this.DoubleBuffered = true;
-            base.FormBorderStyle = FormBorderStyle.None;
-            base.MaximizeBox = false;
-            base.MinimizeBox = false;
-            this.MinimumSize = new Size(1, 1);
-            base.Name = "CaptureSelLine";
-            base.ShowIcon = false;
-            base.ShowInTaskbar = false;
-            base.StartPosition = FormStartPosition.Manual;
-            base.TopMost = true;
-            base.TransparencyKey = Color.Transparent;
-            base.Paint += new PaintEventHandler(this.CaptureSelLine_Paint);
-            base.ResumeLayout(false);
-        }
-
+        // Token: 0x060003B8 RID: 952 RVA: 0x00016778 File Offset: 0x00014978
         protected override void OnPaintBackground(PaintEventArgs e)
         {
             base.OnPaintBackground(e);
         }
 
-        public void SetPen(bool issolid, Color linecolor)
-        {
-            if (this.penLine.Color.ToArgb() != linecolor.ToArgb())
-            {
-                this.penLine = new Pen(linecolor, 1f);
-            }
-            if (!issolid)
-            {
-                this.penLine.DashStyle = DashStyle.Dash;
-                this.penLine.DashPattern = this.pat;
-            }
-            else
-            {
-                this.penLine.DashStyle = DashStyle.Solid;
-            }
-        }
-
+        // Token: 0x060003B9 RID: 953 RVA: 0x00016784 File Offset: 0x00014984
         public void SetSelSize(int x, int width)
         {
-            if (this._linetype == SelLineType.Horizon)
+            if (_linetype == SelLineType.Horizon)
             {
-                this.ptSel.X = x;
-                this.szSel.Width = width;
+                ptSel.X = x;
+                szSel.Width = width;
             }
             else
             {
-                this.ptSel.Y = x;
-                this.szSel.Height = width;
+                ptSel.Y = x;
+                szSel.Height = width;
             }
-            if ((this.lastx != x) || (this.lastw != width))
+            if (lastx == x && lastw == width)
             {
-                base.Invalidate();
-                base.Update();
-                this.lastx = x;
-                this.lastw = width;
+                return;
             }
+            base.Invalidate();
+            base.Update();
+            lastx = x;
+            lastw = width;
         }
+
+        // Token: 0x0400020C RID: 524
+        private Point ptSel;
+
+        // Token: 0x0400020D RID: 525
+        private Size szSel;
+
+        // Token: 0x0400020E RID: 526
+        private SelLineType _linetype;
+
+        // Token: 0x0400020F RID: 527
+        private Pen penBack;
+
+        // Token: 0x04000210 RID: 528
+        private Pen penLine;
+
+        // Token: 0x04000211 RID: 529
+        private Pen penWhite;
+
+        // Token: 0x04000212 RID: 530
+        private int lastx;
+
+        // Token: 0x04000213 RID: 531
+        private int lastw;
+
+        // Token: 0x04000214 RID: 532
+        private float[] pat;
+
+        // Token: 0x04000215 RID: 533
+        private static int DashOffset;
     }
 }
-

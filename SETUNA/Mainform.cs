@@ -1,282 +1,161 @@
-﻿namespace SETUNA
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.IO;
+using System.Windows.Forms;
+using System.Xml.Serialization;
+using com.clearunit;
+using SETUNA.Main;
+using SETUNA.Main.KeyItems;
+using SETUNA.Main.Option;
+using SETUNA.Main.Style;
+
+namespace SETUNA
 {
-    using com.clearunit;
-    using SETUNA.Main;
-    using SETUNA.Main.KeyItems;
-    using SETUNA.Main.Option;
-    using SETUNA.Main.Style;
-    using System;
-    using System.Collections.Generic;
-    using System.ComponentModel;
-    using System.Drawing;
-    using System.Drawing.Imaging;
-    using System.IO;
-    using System.Runtime.CompilerServices;
-    using System.Windows.Forms;
-    using System.Xml.Serialization;
-
-    public sealed class Mainform : Form, IScrapKeyPressEventListener, IScrapAddedListener, IScrapRemovedListener, IScrapStyleListener, IScrapMenuListener, ISingletonForm
+    // Token: 0x02000037 RID: 55
+    public sealed partial class Mainform : BaseForm, IScrapKeyPressEventListener, IScrapAddedListener, IScrapRemovedListener, IScrapStyleListener, IScrapMenuListener, ISingletonForm
     {
-        private Queue<ScrapSource> _imgpool;
-        private bool _iscapture = false;
-        private bool _isoption = false;
-        private bool _isstart = false;
-        private Button button1;
-        private Button button4;
-        private static CaptureForm cap_form;
-        private IContainer components;
-        public Queue<ScrapBase> dustbox;
-        private ClickCapture frmClickCapture;
-        private SplashForm frmSplash;
-        public KeyItemBook keyBook;
-        public SetunaOption optSetuna;
-        public ScrapBook scrapBook;
-        private NotifyIcon setunaIcon;
-        private ContextStyleMenuStrip setunaIconMenu;
-        private ContextStyleMenuStrip subMenu;
-        private ToolStripMenuItem testToolStripMenuItem;
-        private Timer timPool;
-        private ToolTip toolTip1;
+        public static Mainform Instance { private set; get; }
 
+        // Token: 0x060001EE RID: 494 RVA: 0x0000A4C4 File Offset: 0x000086C4
         public Mainform()
         {
-            this.InitializeComponent();
-            this.scrapBook = new ScrapBook(this);
-            this.scrapBook.addKeyPressListener(this);
-            this.scrapBook.addScrapAddedListener(this);
-            this.scrapBook.addScrapRemovedListener(this);
-            this.optSetuna = new SetunaOption();
-            this.dustbox = new Queue<ScrapBase>();
-            this.scrapBook.DustBox = this.dustbox;
-            this.scrapBook.DustBoxCapacity = 5;
-            this.keyBook = this.optSetuna.GetKeyItemBook();
-            this._imgpool = new Queue<ScrapSource>();
-            this.SetSubMenu();
-            this.Width = 300;
-            this.Height = 100;
+            Instance = this;
 
-            InitImage();
+            _isstart = false;
+            _iscapture = false;
+            _isoption = false;
+            InitializeComponent();
+            scrapBook = new ScrapBook(this);
+            scrapBook.addKeyPressListener(this);
+            scrapBook.addScrapAddedListener(this);
+            scrapBook.addScrapRemovedListener(this);
+            optSetuna = new SetunaOption();
+            dustbox = new Queue<ScrapBase>();
+            scrapBook.DustBox = dustbox;
+            scrapBook.DustBoxCapacity = 5;
+            keyBook = optSetuna.GetKeyItemBook();
+            _imgpool = new List<ScrapSource>();
+            SetSubMenu();
+
+            Text = $"SETUNA {Application.ProductVersion}";
+
+            NetUtils.Init();
         }
 
-        void InitImage()
+        // Token: 0x17000055 RID: 85
+        // (get) Token: 0x060001F0 RID: 496 RVA: 0x0000A59C File Offset: 0x0000879C
+        // (set) Token: 0x060001EF RID: 495 RVA: 0x0000A577 File Offset: 0x00008777
+        public bool IsStart
         {
+            get => _isstart;
+            set
+            {
+                _isstart = value;
+                if (value && _imgpool.Count > 0)
+                {
+                    timPool.Start();
+                }
+            }
+        }
+
+        // Token: 0x17000056 RID: 86
+        // (get) Token: 0x060001F2 RID: 498 RVA: 0x0000A5C9 File Offset: 0x000087C9
+        // (set) Token: 0x060001F1 RID: 497 RVA: 0x0000A5A4 File Offset: 0x000087A4
+        public bool IsCapture
+        {
+            get => _iscapture;
+            set
+            {
+                _iscapture = value;
+                if (!value && _imgpool.Count > 0)
+                {
+                    timPool.Start();
+                }
+            }
+        }
+
+        // Token: 0x17000057 RID: 87
+        // (get) Token: 0x060001F4 RID: 500 RVA: 0x0000A5F6 File Offset: 0x000087F6
+        // (set) Token: 0x060001F3 RID: 499 RVA: 0x0000A5D1 File Offset: 0x000087D1
+        public bool IsOption
+        {
+            get => _isoption;
+            set
+            {
+                _isoption = value;
+                if (!value && _imgpool.Count > 0)
+                {
+                    timPool.Start();
+                }
+            }
+        }
+
+        // Token: 0x060001F5 RID: 501 RVA: 0x0000A600 File Offset: 0x00008800
+        private void SetSubMenu()
+        {
+            setunaIconMenu.Scrap = scrapBook.GetDummyScrap();
+            setunaIconMenu.Items.Clear();
+            setunaIconMenu.Items.Add(new CScrapListStyle().GetToolStrip(scrapBook));
+            setunaIconMenu.Items.Add(new CDustBoxStyle().GetToolStrip(scrapBook));
+            setunaIconMenu.Items.Add(new CDustEraseStyle().GetToolStrip());
+            setunaIconMenu.Items.Add(new CDustScrapStyle().GetToolStrip());
+            setunaIconMenu.Items.Add(new ToolStripSeparator());
+            setunaIconMenu.Items.Add(new CCaptureStyle().GetToolStrip());
+            setunaIconMenu.Items.Add(new CPasteStyle().GetToolStrip());
+            setunaIconMenu.Items.Add(new ToolStripSeparator());
+            setunaIconMenu.Items.Add(new CShowVersionStyle().GetToolStrip());
+            setunaIconMenu.Items.Add(new COptionStyle().GetToolStrip());
+            setunaIconMenu.Items.Add(new ToolStripSeparator());
+            setunaIconMenu.Items.Add(new CShutDownStyle().GetToolStrip());
+        }
+
+        // Token: 0x060001F6 RID: 502 RVA: 0x0000A740 File Offset: 0x00008940
+        public void StartCapture()
+        {
+            if (IsCapture || Mainform.cap_form == null || IsOption)
+            {
+                return;
+            }
             try
             {
-                var tPath = Cache.path;
-                DirectoryInfo tInfo = new DirectoryInfo(tPath);
-                var tFiles = tInfo.GetFiles("*.jpeg");
-                if (tFiles != null && tFiles.Length > 0)
+                if (frmClickCapture != null)
                 {
-                    foreach (var tFileInfo in tFiles)
-                    {
-                        try
-                        {
-                            Image tImg = Image.FromFile(tFileInfo.FullName);
-                            var tGuid = tFileInfo.Name.Replace(tFileInfo.Extension, string.Empty);
-                            if (tImg != null)
-                            {
-                                this.scrapBook.AddScrap(tImg, 0, 0, tImg.Width, tImg.Height, tGuid);
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine("加载图片失败：" + ex.ToString());
-                        }
-
-                    }
+                    frmClickCapture.Stop();
                 }
-            }catch { }
-        }
-
-        public void AddImageList(ScrapSource src)
-        {
-            this._imgpool.Enqueue(src);
-            this.timPool.Start();
-        }
-
-        private void button1_Click(object sender, EventArgs e)
-        {
-            this.StartCapture();
-        }
-
-        private void button2_Click(object sender, EventArgs e)
-        {
-            GC.Collect();
-        }
-
-        private void button4_Click(object sender, EventArgs e)
-        {
-            this.Option();
-        }
-
-        private void button6_Click(object sender, EventArgs e)
-        {
-            this.optSetuna = SetunaOption.GetDefaultOption();
-            int num = 0;
-            num++;
-        }
-
-        private void button7_Click(object sender, EventArgs e)
-        {
-        }
-
-        private void CloseSetuna()
-        {
-            base.Close();
-        }
-
-        void ISingletonForm.DetectExternalStartup(string version, string[] args)
-        {
-            base.Invoke(new ExternalStartupDelegate(this.ExternalStartup), new object[] { version, args });
-        }
-
-        private void CommandCutRect(Rectangle rect, string fname)
-        {
-            using (Bitmap bitmap = new Bitmap(rect.Width, rect.Height, PixelFormat.Format24bppRgb))
+                IsCapture = true;
+                Console.WriteLine(string.Concat(new object[]
+                {
+                    "9 - ",
+                    DateTime.Now.ToString(),
+                    " ",
+                    DateTime.Now.Millisecond
+                }));
+                Mainform.cap_form.OnCaptureClose = new CaptureForm.CaptureClosedDelegate(EndCapture);
+                Mainform.cap_form.ShowCapture(optSetuna.Setuna);
+                Console.WriteLine(string.Concat(new object[]
+                {
+                    "16 - ",
+                    DateTime.Now.ToString(),
+                    " ",
+                    DateTime.Now.Millisecond
+                }));
+            }
+            catch (Exception ex)
             {
-                Point location = new Point(rect.X, rect.Y);
-                CaptureForm.CopyFromScreen(bitmap, location);
-                if (fname == "")
+                Console.WriteLine("Mainform StartCapture Exception:" + ex.Message);
+                IsCapture = false;
+                if (Mainform.cap_form != null)
                 {
-                    this.AddImageList(new ScrapSourceImage(bitmap, location));
+                    Mainform.cap_form.DialogResult = DialogResult.Cancel;
                 }
+                EndCapture(Mainform.cap_form);
             }
         }
 
-        public void CommandRun(string[] args)
-        {
-            Console.WriteLine("-命令行参数--------------------");
-            int num = 0;
-            Rectangle rect = new Rectangle(0, 0, 0, 0);
-            string fname = "";
-            foreach (string str4 in args)
-            {
-                try
-                {
-                    string path = str4;
-                    string str = "";
-                    if (str4.Length > 3)
-                    {
-                        str = path.Substring(0, 3);
-                        if ((str.Substring(0, 1) == "/") && (str.Substring(2, 1) == ":"))
-                        {
-                            path = str4.Substring(str.Length, path.Length - str.Length);
-                        }
-                        else
-                        {
-                            str = "";
-                        }
-                    }
-                    if (str.Length > 0)
-                    {
-                        if (str == "/R:")
-                        {
-                            string[] strArray = path.Split(new char[] { ',' });
-                            if (strArray.Length == 4)
-                            {
-                                rect = new Rectangle
-                                {
-                                    X = int.Parse(strArray[0]),
-                                    Y = int.Parse(strArray[1]),
-                                    Width = int.Parse(strArray[2]),
-                                    Height = int.Parse(strArray[3])
-                                };
-                                Console.WriteLine("[位置]" + rect.ToString());
-                                continue;
-                            }
-                        }
-                        if (str == "/P:")
-                        {
-                            fname = path;
-                        }
-                        if (str == "/C:")
-                        {
-                            if (path.ToUpper() == "OPTION")
-                            {
-                                num = 1;
-                                continue;
-                            }
-                            if (path.ToUpper() == "CAPTURE")
-                            {
-                                num = 2;
-                                continue;
-                            }
-                            if (path.ToUpper() == "SUBMENU")
-                            {
-                                num = 3;
-                                continue;
-                            }
-                        }
-                    }
-                    this.AddImageList(new ScrapSourcePath(path));
-                    Console.WriteLine(path);
-                }
-                catch
-                {
-                    Console.WriteLine("[Error]" + str4);
-                }
-            }
-            Console.WriteLine("---------------------------------------");
-            if ((rect.Width >= 10) && (rect.Height >= 10))
-            {
-                this.CommandCutRect(rect, fname);
-            }
-            else if ((num != 0) && this.IsStart)
-            {
-                switch (num)
-                {
-                    case 1:
-                        if (this.IsOption)
-                        {
-                            break;
-                        }
-                        this.Option();
-                        return;
-
-                    case 2:
-                        if (!this.IsCapture)
-                        {
-                            this.StartCapture();
-                        }
-                        break;
-
-                    default:
-                        return;
-                }
-            }
-        }
-
-        public void CreateScrapFromImage(Image image, Point location)
-        {
-            if (image != null)
-            {
-                using (Bitmap bitmap = (Bitmap)image.Clone())
-                {
-                    if (location == Point.Empty)
-                    {
-                        location = Cursor.Position;
-                    }
-                    int x = location.X;
-                    int y = location.Y;
-                    this.scrapBook.AddScrap((Bitmap)bitmap.Clone(), x, y, bitmap.Width, bitmap.Height);
-                }
-            }
-        }
-
-        private void CreateScrapFromsource(ScrapSource src)
-        {
-            this.CreateScrapFromImage(src.GetImage(), src.GetPosition());
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing && (this.components != null))
-            {
-                this.components.Dispose();
-            }
-            base.Dispose(disposing);
-        }
-
+        // Token: 0x060001F7 RID: 503 RVA: 0x0000A89C File Offset: 0x00008A9C
         private void EndCapture(CaptureForm cform)
         {
             try
@@ -284,11 +163,11 @@
                 Console.WriteLine("Mainform EndCapture Start---");
                 if (cform.DialogResult == DialogResult.OK)
                 {
-                    using (Bitmap bitmap = cform.ClipBitmap)
+                    using (var clipBitmap = cform.ClipBitmap)
                     {
-                        if (bitmap != null)
+                        if (clipBitmap != null)
                         {
-                            this.scrapBook.AddScrap(bitmap, cform.ClipStart.X, cform.ClipStart.Y, cform.ClipSize.Width, cform.ClipSize.Height);
+                            scrapBook.AddScrap(clipBitmap, cform.ClipStart.X, cform.ClipStart.Y, cform.ClipSize.Width, cform.ClipSize.Height);
                         }
                     }
                 }
@@ -296,354 +175,241 @@
                 Cursor.Clip = Rectangle.Empty;
                 Console.WriteLine("Mainform EndCapture End---");
             }
-            catch (Exception exception)
+            catch (Exception ex)
             {
-                Console.WriteLine("MainForm EndCapture Exception:" + exception.Message);
+                Console.WriteLine("MainForm EndCapture Exception:" + ex.Message);
             }
             finally
             {
-                this.IsCapture = false;
-                if (this.frmClickCapture != null)
+                IsCapture = false;
+                if (frmClickCapture != null)
                 {
-                    this.frmClickCapture.Restart();
+                    frmClickCapture.Restart();
                 }
             }
         }
 
-        private void ExternalStartup(string version, string[] args)
-        {
-            if (Application.ProductVersion != version)
-            {
-                MessageBox.Show("SETUNA已经运行在不同的版本。", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
-            }
-            else if (args.Length > 0)
-            {
-                this.CommandRun(args);
-            }
-            else if (this.optSetuna.Setuna.DupType == SetunaOption.SetunaOptionData.OpeningType.Capture)
-            {
-                this.StartCapture();
-            }
-        }
-
-        private void frmClickCapture_ClickCaptureEvent(object sender, EventArgs e)
-        {
-            this.StartCapture();
-        }
-
-        private void InitializeComponent()
-        {
-            this.components = new Container();
-            ComponentResourceManager manager = new ComponentResourceManager(typeof(Mainform));
-            this.button1 = new Button();
-            this.button4 = new Button();
-            this.timPool = new Timer(this.components);
-            this.setunaIcon = new NotifyIcon(this.components);
-            this.setunaIconMenu = new ContextStyleMenuStrip(this.components);
-            this.subMenu = new ContextStyleMenuStrip(this.components);
-            this.testToolStripMenuItem = new ToolStripMenuItem();
-            this.toolTip1 = new ToolTip(this.components);
-            this.subMenu.SuspendLayout();
-            base.SuspendLayout();
-            manager.ApplyResources(this.button1, "button1");
-            this.button1.ForeColor = Color.Gray;
-            this.button1.Name = "button1";
-            this.button1.UseVisualStyleBackColor = true;
-            this.button1.Click += new EventHandler(this.button1_Click);
-            manager.ApplyResources(this.button4, "button4");
-            this.button4.ForeColor = Color.Gray;
-            this.button4.Name = "button4";
-            this.button4.UseVisualStyleBackColor = true;
-            this.button4.Click += new EventHandler(this.button4_Click);
-            this.timPool.Tick += new EventHandler(this.timPool_Tick);
-            this.setunaIcon.ContextMenuStrip = this.setunaIconMenu;
-            manager.ApplyResources(this.setunaIcon, "setunaIcon");
-            this.setunaIcon.MouseClick += new MouseEventHandler(this.setunaIcon_MouseClick);
-            this.setunaIconMenu.Name = "setunaIconMenu";
-            this.setunaIconMenu.Scrap = null;
-            manager.ApplyResources(this.setunaIconMenu, "setunaIconMenu");
-            this.setunaIconMenu.Opening += new CancelEventHandler(this.setunaIconMenu_Opening);
-            this.subMenu.Items.AddRange(new ToolStripItem[] { this.testToolStripMenuItem });
-            this.subMenu.Name = "subMenu";
-            this.subMenu.Scrap = null;
-            manager.ApplyResources(this.subMenu, "subMenu");
-            this.testToolStripMenuItem.Name = "testToolStripMenuItem";
-            manager.ApplyResources(this.testToolStripMenuItem, "testToolStripMenuItem");
-            this.toolTip1.IsBalloon = true;
-            this.toolTip1.ShowAlways = true;
-            this.toolTip1.StripAmpersands = true;
-            this.toolTip1.ToolTipIcon = ToolTipIcon.Info;
-            this.toolTip1.ToolTipTitle = "asfdadsf";
-            base.AutoScaleMode = AutoScaleMode.None;
-            manager.ApplyResources(this, "$this");
-            this.ContextMenuStrip = this.setunaIconMenu;
-            base.Controls.Add(this.button4);
-            base.Controls.Add(this.button1);
-            base.MaximizeBox = false;
-            base.Name = "Mainform";
-            base.TopMost = true;
-            base.Load += new EventHandler(this.Mainform_Load);
-            base.Shown += new EventHandler(this.Mainform_Shown);
-            base.FormClosing += new FormClosingEventHandler(this.Mainform_FormClosing);
-            this.subMenu.ResumeLayout(false);
-            base.ResumeLayout(false);
-        }
-
-        private void LoadOption()
-        {
-            string configFile = SetunaOption.ConfigFile;
-            try
-            {
-                if (!File.Exists(configFile))
-                {
-                    this.optSetuna = SetunaOption.GetDefaultOption();
-                }
-                else
-                {
-                    System.Type[] allType = SetunaOption.GetAllType();
-                    XmlSerializer serializer = new XmlSerializer(typeof(SetunaOption), allType);
-                    FileStream stream = new FileStream(configFile, FileMode.Open);
-                    this.optSetuna = (SetunaOption)serializer.Deserialize(stream);
-                    stream.Close();
-                }
-            }
-            catch
-            {
-                this.optSetuna = SetunaOption.GetDefaultOption();
-                MessageBox.Show("无法读取配置文件。\n使用默认设置。", "SETUNA2", MessageBoxButtons.OK, MessageBoxIcon.Hand);
-            }
-            finally
-            {
-                this.OptionApply();
-            }
-        }
-
-        private void Mainform_FormClosing(object sender, FormClosingEventArgs e)
-        {
-            this.optSetuna.UnregistHotKey();
-        }
-
-        private void Mainform_Load(object sender, EventArgs e)
-        {
-            base.Visible = false;
-            this.LoadOption();
-            this.OptionApply();
-            this.SaveOption();
-            if (this.optSetuna.Setuna.ShowSplashWindow)
-            {
-                this.frmSplash = new SplashForm();
-                base.AddOwnedForm(this.frmSplash);
-                this.frmSplash.Show(this);
-                this.frmSplash.SplashTimer.Start();
-            }
-            this.timPool.Start();
-            cap_form = new CaptureForm(this.optSetuna.Setuna);
-            this.IsStart = true;
-        }
-
-        private void Mainform_Shown(object sender, EventArgs e)
-        {
-        }
-
-        private void miCapture_Click(object sender, EventArgs e)
-        {
-            this.StartCapture();
-        }
-
-        private void miOption_Click(object sender, EventArgs e)
-        {
-            this.Option();
-        }
-
-        private void miSetunaClose_Click(object sender, EventArgs e)
-        {
-            this.CloseSetuna();
-        }
-
-        public void OnActiveScrapInList(object sender, EventArgs e)
-        {
-            ToolStripMenuItem item = (ToolStripMenuItem)sender;
-            if (item.Tag != null)
-            {
-                ((ScrapBase)item.Tag).Activate();
-            }
-        }
-
+        // Token: 0x060001F8 RID: 504 RVA: 0x0000A994 File Offset: 0x00008B94
         public void Option()
         {
-            if (!this.IsCapture)
+            if (IsCapture)
             {
-                this.IsOption = true;
-                SetunaOption opt = (SetunaOption)this.optSetuna.Clone();
-                List<ScrapBase> list = new List<ScrapBase>();
-                try
+                return;
+            }
+            IsOption = true;
+            var opt = (SetunaOption)optSetuna.Clone();
+            var list = new List<ScrapBase>();
+            try
+            {
+                foreach (var scrapBase in scrapBook)
                 {
-                    foreach (ScrapBase base2 in this.scrapBook)
+                    if (scrapBase.Visible && scrapBase.TopMost)
                     {
-                        if (base2.Visible && base2.TopMost)
-                        {
-                            list.Add(base2);
-                        }
-                    }
-                    foreach (ScrapBase base3 in list)
-                    {
-                        base3.TopMost = false;
-                    }
-                    base.TopMost = false;
-                    this.optSetuna.UnregistHotKey();
-                    if (this.frmClickCapture != null)
-                    {
-                        this.frmClickCapture.Stop();
-                    }
-                    OptionForm form = new OptionForm(opt)
-                    {
-                        StartPosition = FormStartPosition.CenterScreen
-                    };
-                    form.ShowDialog();
-                    if (form.DialogResult == DialogResult.OK)
-                    {
-                        this.optSetuna = form.Option;
-                        this.OptionApply();
-                    }
-                    if (!this.optSetuna.RegistHotKey(base.Handle))
-                    {
-                        this.optSetuna.ScrapHotKeyEnable = false;
-                        new HotkeyMsg { HotKey = (Keys)this.optSetuna.ScrapHotKey }.ShowDialog();
-                    }
-                    if (form.DialogResult == DialogResult.OK)
-                    {
-                        this.SaveOption();
+                        list.Add(scrapBase);
                     }
                 }
-                finally
+                foreach (var scrapBase2 in list)
                 {
-                    base.TopMost = true;
-                    foreach (ScrapBase base4 in list)
-                    {
-                        base4.TopMost = true;
-                    }
-                    this.IsOption = false;
+                    scrapBase2.TopMost = false;
                 }
+                base.TopMost = false;
+                if (frmClickCapture != null)
+                {
+                    frmClickCapture.Stop();
+                }
+                var optionForm = new OptionForm(opt)
+                {
+                    StartPosition = FormStartPosition.CenterScreen
+                };
+                optionForm.ShowDialog();
+                if (optionForm.DialogResult == DialogResult.OK)
+                {
+                    optSetuna = optionForm.Option;
+                    OptionApply();
+                }
+                if (!optSetuna.RegistHotKey(base.Handle, HotKeyID.Capture))
+                {
+                    optSetuna.ScrapHotKeyEnable = false;
+                    new HotkeyMsg
+                    {
+                        HotKey = optSetuna.ScrapHotKeys[(int)HotKeyID.Capture]
+                    }.ShowDialog();
+                }
+                if (!optSetuna.RegistHotKey(base.Handle, HotKeyID.Function1))
+                {
+                    optSetuna.ScrapHotKeyEnable = false;
+                    new HotkeyMsg
+                    {
+                        HotKey = optSetuna.ScrapHotKeys[(int)HotKeyID.Function1]
+                    }.ShowDialog();
+                }
+                if (optionForm.DialogResult == DialogResult.OK)
+                {
+                    SaveOption();
+                }
+            }
+            finally
+            {
+                base.TopMost = true;
+                foreach (var scrapBase3 in list)
+                {
+                    scrapBase3.TopMost = true;
+                }
+                IsOption = false;
             }
         }
 
+        // Token: 0x060001F9 RID: 505 RVA: 0x0000AB90 File Offset: 0x00008D90
         private void OptionApply()
         {
             try
             {
-                this.keyBook = this.optSetuna.GetKeyItemBook();
-                if (this.optSetuna.Setuna.DustBoxEnable)
+                keyBook = optSetuna.GetKeyItemBook();
+                if (optSetuna.Setuna.DustBoxEnable)
                 {
-                    this.scrapBook.DustBoxCapacity = (short)this.optSetuna.Setuna.DustBoxCapacity;
+                    scrapBook.DustBoxCapacity = (short)optSetuna.Setuna.DustBoxCapacity;
                 }
                 else
                 {
-                    this.scrapBook.DustBoxCapacity = 0;
+                    scrapBook.DustBoxCapacity = 0;
                 }
-                if (!this.optSetuna.RegistHotKey(base.Handle))
+                if (!optSetuna.RegistHotKey(base.Handle, HotKeyID.Capture))
                 {
-                    this.optSetuna.ScrapHotKeyEnable = false;
-                    new HotkeyMsg { HotKey = (Keys)this.optSetuna.ScrapHotKey }.ShowDialog();
+                    optSetuna.ScrapHotKeyEnable = false;
+                    new HotkeyMsg
+                    {
+                        HotKey = optSetuna.ScrapHotKeys[(int)HotKeyID.Capture]
+                    }.ShowDialog();
                 }
-                if (this.optSetuna.Setuna.AppType == SetunaOption.SetunaOptionData.ApplicationType.ApplicationMode)
+                if (!optSetuna.RegistHotKey(base.Handle, HotKeyID.Function1))
+                {
+                    optSetuna.ScrapHotKeyEnable = false;
+                    new HotkeyMsg
+                    {
+                        HotKey = optSetuna.ScrapHotKeys[(int)HotKeyID.Function1]
+                    }.ShowDialog();
+                }
+                if (optSetuna.Setuna.AppType == SetunaOption.SetunaOptionData.ApplicationType.ApplicationMode)
                 {
                     base.ShowInTaskbar = true;
-                    this.setunaIcon.Visible = false;
+                    setunaIcon.Visible = false;
                     base.MinimizeBox = true;
                     base.Visible = true;
                 }
                 else
                 {
-                    this.setunaIcon.Visible = true;
+                    setunaIcon.Visible = true;
                     base.ShowInTaskbar = false;
                     base.MinimizeBox = false;
                     base.WindowState = FormWindowState.Normal;
-                    base.Visible = this.optSetuna.Setuna.ShowMainWindow;
+                    base.Visible = optSetuna.Setuna.ShowMainWindow;
                 }
-                this.subMenu.Items.Clear();
-                foreach (int num in this.optSetuna.Scrap.SubMenuStyles)
+                subMenu.Items.Clear();
+                foreach (var num in optSetuna.Scrap.SubMenuStyles)
                 {
                     if (num >= 0)
                     {
-                        foreach (CStyle style in this.optSetuna.Styles)
+                        using (var enumerator2 = optSetuna.Styles.GetEnumerator())
                         {
-                            if (style.StyleID == num)
+                            while (enumerator2.MoveNext())
                             {
-                                this.subMenu.Items.Add(style.GetToolStrip(this.scrapBook));
+                                var cstyle = enumerator2.Current;
+                                if (cstyle.StyleID == num)
+                                {
+                                    subMenu.Items.Add(cstyle.GetToolStrip(scrapBook));
+                                }
                             }
+                            continue;
                         }
+                    }
+                    var preStyle = CPreStyles.GetPreStyle(num);
+                    if (preStyle != null)
+                    {
+                        subMenu.Items.Add(preStyle.GetToolStrip(scrapBook));
+                    }
+                }
+                if (optSetuna.Setuna.ClickCapture)
+                {
+                    if (frmClickCapture == null)
+                    {
+                        frmClickCapture = new ClickCapture(optSetuna.Setuna.ClickCaptureValue);
+                        frmClickCapture.ClickCaptureEvent += frmClickCapture_ClickCaptureEvent;
+                        frmClickCapture.Show();
                     }
                     else
                     {
-                        CStyle preStyle = CPreStyles.GetPreStyle(num);
-                        if (preStyle != null)
-                        {
-                            this.subMenu.Items.Add(preStyle.GetToolStrip(this.scrapBook));
-                        }
+                        frmClickCapture.ClickFlags = optSetuna.Setuna.ClickCaptureValue;
+                        frmClickCapture.Restart();
                     }
                 }
-                if (this.optSetuna.Setuna.ClickCapture)
+                else if (frmClickCapture != null)
                 {
-                    if (this.frmClickCapture == null)
-                    {
-                        this.frmClickCapture = new ClickCapture(this.optSetuna.Setuna.ClickCaptureValue);
-                        this.frmClickCapture.ClickCaptureEvent += new ClickCapture.ClipCaptureDelegate(this.frmClickCapture_ClickCaptureEvent);
-                        this.frmClickCapture.Show();
-                    }
-                    else
-                    {
-                        this.frmClickCapture.ClickFlags = this.optSetuna.Setuna.ClickCaptureValue;
-                        this.frmClickCapture.Restart();
-                    }
+                    frmClickCapture.Close();
+                    frmClickCapture.Dispose();
+                    frmClickCapture = null;
                 }
-                else if (this.frmClickCapture != null)
-                {
-                    this.frmClickCapture.Close();
-                    this.frmClickCapture.Dispose();
-                    this.frmClickCapture = null;
-                }
+
+                windowTimer.Enabled = optSetuna.Setuna.TopMostEnabled;
             }
-            catch (Exception exception)
+            catch (Exception ex)
             {
-                Console.WriteLine("Mainform OptionApply Exception:" + exception.Message);
+                Console.WriteLine("Mainform OptionApply Exception:" + ex.Message);
             }
         }
 
-        public void RestoreScrap(object sender, EventArgs e)
+        // Token: 0x060001FA RID: 506 RVA: 0x0000AE78 File Offset: 0x00009078
+        private void frmClickCapture_ClickCaptureEvent(object sender, EventArgs e)
         {
-            ToolStripMenuItem item = (ToolStripMenuItem)sender;
-            List<ScrapBase> list = new List<ScrapBase>();
-            while (this.dustbox.Count > 0)
-            {
-                ScrapBase base2 = this.dustbox.Dequeue();
-                if (!base2.Equals(item.Tag))
-                {
-                    list.Add(base2);
-                }
-                else
-                {
-                    this.scrapBook.AddScrap(base2);
-                    base2.Show();
-                }
-            }
-            this.dustbox.Clear();
-            foreach (ScrapBase base3 in list)
-            {
-                this.dustbox.Enqueue(base3);
-            }
-            new ScrapEventArgs();
+            StartCapture();
         }
 
+        // Token: 0x060001FB RID: 507 RVA: 0x0000AE80 File Offset: 0x00009080
+        private void CloseSetuna()
+        {
+            base.Close();
+        }
+
+        // Token: 0x060001FC RID: 508 RVA: 0x0000AE88 File Offset: 0x00009088
+        public void ScrapKeyPress(object sender, ScrapKeyPressEventArgs e)
+        {
+            var keyItem = keyBook.FindKeyItem(e.key);
+            if (keyItem != null)
+            {
+                var scrapBase = (ScrapBase)sender;
+                keyItem.ParentStyle.Apply(ref scrapBase);
+            }
+        }
+
+        // Token: 0x060001FD RID: 509 RVA: 0x0000AEBE File Offset: 0x000090BE
+        protected override void WndProc(ref Message m)
+        {
+            base.WndProc(ref m);
+            if (m.Msg == 0x0312)
+            {
+                var id = (HotKeyID)m.WParam;
+                switch (id)
+                {
+                    case HotKeyID.Capture:
+                        StartCapture();
+                        break;
+                    case HotKeyID.Function1:
+                        SetAllScrapsActive(!allScrapActive);
+                        break;
+                }
+            }
+        }
+
+        // Token: 0x060001FE RID: 510 RVA: 0x0000AEE8 File Offset: 0x000090E8
         private void SaveOption()
         {
-            string configFile = SetunaOption.ConfigFile;
-            System.Type[] allType = SetunaOption.GetAllType();
+            var configFile = SetunaOption.ConfigFile;
+            var allType = SetunaOption.GetAllType();
             try
             {
-                XmlSerializer serializer = new XmlSerializer(this.optSetuna.GetType(), allType);
-                FileStream stream = new FileStream(configFile, FileMode.Create);
-                serializer.Serialize((Stream)stream, this.optSetuna);
-                stream.Close();
+                var xmlSerializer = new XmlSerializer(optSetuna.GetType(), allType);
+                var fileStream = new FileStream(configFile, FileMode.Create);
+                xmlSerializer.Serialize(fileStream, optSetuna);
+                fileStream.Close();
             }
             catch
             {
@@ -651,220 +417,575 @@
             }
         }
 
-        public void ScrapActivated(object sender, ScrapEventArgs e)
+        // Token: 0x060001FF RID: 511 RVA: 0x0000AF58 File Offset: 0x00009158
+        private void LoadOption()
         {
-            bool inactiveAlphaChange = this.optSetuna.Scrap.InactiveAlphaChange;
-            bool inactiveLineChange = this.optSetuna.Scrap.InactiveLineChange;
+            var configFile = SetunaOption.ConfigFile;
+            try
+            {
+                if (!File.Exists(configFile))
+                {
+                    optSetuna = SetunaOption.GetDefaultOption();
+                }
+                else
+                {
+                    var allType = SetunaOption.GetAllType();
+                    var xmlSerializer = new XmlSerializer(typeof(SetunaOption), allType);
+                    var fileStream = new FileStream(configFile, FileMode.Open);
+                    optSetuna = (SetunaOption)xmlSerializer.Deserialize(fileStream);
+                    fileStream.Close();
+                }
+            }
+            catch
+            {
+                optSetuna = SetunaOption.GetDefaultOption();
+                MessageBox.Show("无法读取配置文件。\n使用默认设置。", "SETUNA2", MessageBoxButtons.OK, MessageBoxIcon.Hand);
+            }
+            finally
+            {
+                OptionApply();
+            }
         }
 
+        // Token: 0x06000200 RID: 512 RVA: 0x0000B000 File Offset: 0x00009200
+        public void RestoreScrap(object sender, EventArgs e)
+        {
+            var toolStripMenuItem = (ToolStripMenuItem)sender;
+            var list = new List<ScrapBase>();
+            while (dustbox.Count > 0)
+            {
+                var scrapBase = dustbox.Dequeue();
+                if (!scrapBase.Equals(toolStripMenuItem.Tag))
+                {
+                    list.Add(scrapBase);
+                }
+                else
+                {
+                    scrapBook.AddScrapThenDo(scrapBase);
+                }
+            }
+            dustbox.Clear();
+            foreach (var item in list)
+            {
+                dustbox.Enqueue(item);
+            }
+            new ScrapEventArgs();
+        }
+
+        // Token: 0x06000201 RID: 513 RVA: 0x0000B0B8 File Offset: 0x000092B8
+        private void miCapture_Click(object sender, EventArgs e)
+        {
+            StartCapture();
+        }
+
+        // Token: 0x06000202 RID: 514 RVA: 0x0000B0C0 File Offset: 0x000092C0
+        private void miOption_Click(object sender, EventArgs e)
+        {
+            Option();
+        }
+
+        // Token: 0x06000203 RID: 515 RVA: 0x0000B0C8 File Offset: 0x000092C8
+        private void miSetunaClose_Click(object sender, EventArgs e)
+        {
+            CloseSetuna();
+        }
+
+        // Token: 0x06000204 RID: 516 RVA: 0x0000B0D0 File Offset: 0x000092D0
+        public void OnActiveScrapInList(object sender, EventArgs e)
+        {
+            var toolStripMenuItem = (ToolStripMenuItem)sender;
+            if (toolStripMenuItem.Tag != null)
+            {
+                var scrapBase = (ScrapBase)toolStripMenuItem.Tag;
+                if (scrapBase.Visible)
+                {
+                    scrapBase.Activate();
+                }
+                else if (scrapBase.StyleForm is Main.StyleItems.CompactScrap compactScrap)
+                {
+                    compactScrap.Close();
+                }
+            }
+        }
+
+        // Token: 0x06000205 RID: 517 RVA: 0x0000B0FE File Offset: 0x000092FE
         public void ScrapAdded(object sender, ScrapEventArgs e)
         {
         }
 
+        // Token: 0x06000206 RID: 518 RVA: 0x0000B100 File Offset: 0x00009300
+        public void ScrapRemoved(object sender, ScrapEventArgs e)
+        {
+        }
+
+        // Token: 0x06000207 RID: 519 RVA: 0x0000B102 File Offset: 0x00009302
+        private void button1_Click(object sender, EventArgs e)
+        {
+            StartCapture();
+        }
+
+        // Token: 0x06000208 RID: 520 RVA: 0x0000B10A File Offset: 0x0000930A
+        private void button4_Click(object sender, EventArgs e)
+        {
+            Option();
+        }
+
+        // Token: 0x06000209 RID: 521 RVA: 0x0000B114 File Offset: 0x00009314
         public void ScrapCreated(object sender, ScrapEventArgs e)
         {
-            CStyle style = this.optSetuna.FindStyle(this.optSetuna.Scrap.CreateStyleID);
-            if (style != null)
+            var cstyle = optSetuna.FindStyle(optSetuna.Scrap.CreateStyleID);
+            if (cstyle != null)
             {
-                e.scrap.Initialized = false;
-                style.Apply(ref e.scrap);
-            }
-            else
-            {
-                e.scrap.Initialized = true;
+                cstyle.Apply(ref e.scrap);
+                return;
             }
         }
 
+        // Token: 0x0600020A RID: 522 RVA: 0x0000B168 File Offset: 0x00009368
         public void ScrapInactived(object sender, ScrapEventArgs e)
         {
-            if (this.optSetuna.Scrap.InactiveAlphaChange)
+            if (optSetuna.Scrap.InactiveAlphaChange)
             {
-                e.scrap.InactiveOpacity = 1.0 - (((double)this.optSetuna.Scrap.InactiveAlphaValue) / 100.0);
+                e.scrap.InactiveOpacity = 1.0 - optSetuna.Scrap.InactiveAlphaValue / 100.0;
             }
             else
             {
                 e.scrap.InactiveOpacity = e.scrap.ActiveOpacity;
             }
-            bool inactiveLineChange = this.optSetuna.Scrap.InactiveLineChange;
+            var inactiveLineChange = optSetuna.Scrap.InactiveLineChange;
         }
 
-        public void ScrapInactiveMouseOut(object sender, ScrapEventArgs e)
+        // Token: 0x0600020B RID: 523 RVA: 0x0000B1E0 File Offset: 0x000093E0
+        public void ScrapActivated(object sender, ScrapEventArgs e)
         {
-            if (this.optSetuna.Scrap.InactiveAlphaChange)
-            {
-                e.scrap.InactiveOpacity = 1.0 - (((double)this.optSetuna.Scrap.InactiveAlphaValue) / 100.0);
-            }
-            else
-            {
-                e.scrap.InactiveOpacity = e.scrap.ActiveOpacity;
-            }
-            bool inactiveLineChange = this.optSetuna.Scrap.InactiveLineChange;
+            var inactiveAlphaChange = optSetuna.Scrap.InactiveAlphaChange;
+            var inactiveLineChange = optSetuna.Scrap.InactiveLineChange;
         }
 
+        // Token: 0x0600020C RID: 524 RVA: 0x0000B204 File Offset: 0x00009404
         public void ScrapInactiveMouseOver(object sender, ScrapEventArgs e)
         {
-            if (this.optSetuna.Scrap.MouseOverAlphaChange)
+            if (optSetuna.Scrap.MouseOverAlphaChange)
             {
-                e.scrap.RollOverOpacity = 1.0 - (((double)this.optSetuna.Scrap.MouseOverAlphaValue) / 100.0);
+                e.scrap.RollOverOpacity = 1.0 - optSetuna.Scrap.MouseOverAlphaValue / 100.0;
             }
             else
             {
                 e.scrap.RollOverOpacity = e.scrap.ActiveOpacity;
             }
-            bool mouseOverLineChange = this.optSetuna.Scrap.MouseOverLineChange;
+            var mouseOverLineChange = optSetuna.Scrap.MouseOverLineChange;
         }
 
-        public void ScrapKeyPress(object sender, ScrapKeyPressEventArgs e)
+        // Token: 0x0600020D RID: 525 RVA: 0x0000B27C File Offset: 0x0000947C
+        public void ScrapInactiveMouseOut(object sender, ScrapEventArgs e)
         {
-            KeyItem item = this.keyBook.FindKeyItem(e.key);
-            if (item != null)
+            if (optSetuna.Scrap.InactiveAlphaChange)
             {
-                ScrapBase scrap = (ScrapBase)sender;
-                item.ParentStyle.Apply(ref scrap);
+                e.scrap.InactiveOpacity = 1.0 - optSetuna.Scrap.InactiveAlphaValue / 100.0;
+            }
+            else
+            {
+                e.scrap.InactiveOpacity = e.scrap.ActiveOpacity;
+            }
+            var inactiveLineChange = optSetuna.Scrap.InactiveLineChange;
+        }
+
+        // Token: 0x0600020E RID: 526 RVA: 0x0000B2F4 File Offset: 0x000094F4
+        private void button6_Click(object sender, EventArgs e)
+        {
+            optSetuna = SetunaOption.GetDefaultOption();
+            var num = 0;
+            num++;
+        }
+
+        // Token: 0x0600020F RID: 527 RVA: 0x0000B312 File Offset: 0x00009512
+        private void button7_Click(object sender, EventArgs e)
+        {
+        }
+
+        // Token: 0x06000210 RID: 528 RVA: 0x0000B314 File Offset: 0x00009514
+        private void Mainform_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            foreach (HotKeyID item in Enum.GetValues(typeof(HotKeyID)))
+            {
+                optSetuna.UnregistHotKey(Handle, item);
             }
         }
 
-        public void ScrapMenuOpening(object sender, ScrapMenuArgs e)
+        // Token: 0x06000211 RID: 529 RVA: 0x0000B324 File Offset: 0x00009524
+        private void Mainform_Load(object sender, EventArgs e)
         {
-            this.subMenu.Scrap = e.scrap;
-            this.subMenu.Show(e.scrap, e.scrap.PointToClient(Cursor.Position));
+            base.Visible = false;
+            LoadOption();
+            OptionApply();
+            SaveOption();
+            if (optSetuna.Setuna.ShowSplashWindow)
+            {
+                frmSplash = new SplashForm();
+                base.AddOwnedForm(frmSplash);
+                frmSplash.Show(this);
+                frmSplash.SplashTimer.Start();
+            }
+            timPool.Start();
+            Mainform.cap_form = new CaptureForm(optSetuna.Setuna);
+            IsStart = true;
+
+            SETUNA.Main.Layer.LayerManager.Instance.Init();
+            SETUNA.Main.Cache.CacheManager.Instance.Init();
+            delayInitTimer.Start();
         }
 
-        public void ScrapRemoved(object sender, ScrapEventArgs e)
-        {
-        }
-
-        private void SetSubMenu()
-        {
-            this.setunaIconMenu.Scrap = this.scrapBook.GetDummyScrap();
-            this.setunaIconMenu.Items.Clear();
-            this.setunaIconMenu.Items.Add(new CScrapListStyle().GetToolStrip(this.scrapBook));
-            this.setunaIconMenu.Items.Add(new CDustBoxStyle().GetToolStrip(this.scrapBook));
-            this.setunaIconMenu.Items.Add(new CDustEraseStyle().GetToolStrip());
-            this.setunaIconMenu.Items.Add(new ToolStripSeparator());
-            this.setunaIconMenu.Items.Add(new CCaptureStyle().GetToolStrip());
-            this.setunaIconMenu.Items.Add(new ToolStripSeparator());
-            this.setunaIconMenu.Items.Add(new CShowVersionStyle().GetToolStrip());
-            this.setunaIconMenu.Items.Add(new COptionStyle().GetToolStrip());
-            this.setunaIconMenu.Items.Add(new ToolStripSeparator());
-            this.setunaIconMenu.Items.Add(new CShutDownStyle().GetToolStrip());
-        }
-
+        // Token: 0x06000212 RID: 530 RVA: 0x0000B3B6 File Offset: 0x000095B6
         private void setunaIcon_MouseClick(object sender, MouseEventArgs e)
         {
-            base.Activate();
+            if (e.Button == MouseButtons.Left)
+            {
+                base.Activate();
+                SETUNA.Main.Layer.LayerManager.Instance.RefreshLayer();
+            }
         }
 
+        private void setunaIcon_MouseDoubleClick(object sender, EventArgs e)
+        {
+            Option();
+        }
+
+        // Token: 0x06000213 RID: 531 RVA: 0x0000B3BE File Offset: 0x000095BE
+        public void ScrapMenuOpening(object sender, ScrapMenuArgs e)
+        {
+            subMenu.Scrap = e.scrap;
+            subMenu.Show(e.scrap, e.scrap.PointToClient(Cursor.Position));
+
+            subMenu.MouseWheel -= SubMenu_MouseWheel;
+            subMenu.MouseWheel += SubMenu_MouseWheel;
+        }
+
+        private void SubMenu_MouseWheel(object sender, MouseEventArgs e)
+        {
+            if (MouseWheelCallbackEvent != null)
+            {
+                MouseWheelCallbackEvent(sender, e);
+            }
+        }
+
+        // Token: 0x06000214 RID: 532 RVA: 0x0000B3F2 File Offset: 0x000095F2
+        private void button2_Click(object sender, EventArgs e)
+        {
+            GC.Collect();
+        }
+
+        // Token: 0x06000215 RID: 533 RVA: 0x0000B3FC File Offset: 0x000095FC
+        private void timPool_Tick(object sender, EventArgs e)
+        {
+            if (_imgpool.Count == 0 || IsCapture || IsOption || !IsStart)
+            {
+                timPool.Stop();
+                return;
+            }
+
+            for (var i = 0; i < _imgpool.Count; i++)
+            {
+                var scrap = _imgpool[i];
+                if (scrap.IsDone)
+                {
+                    _imgpool.RemoveAt(i);
+
+                    using (var scrapSource = scrap)
+                    {
+                        CreateScrapFromsource(scrapSource);
+                    }
+
+                    break;
+                }
+            }
+        }
+
+        // Token: 0x06000216 RID: 534 RVA: 0x0000B46C File Offset: 0x0000966C
+        public void AddImageList(ScrapSource src)
+        {
+            _imgpool.Add(src);
+            timPool.Start();
+        }
+
+        // Token: 0x06000217 RID: 535 RVA: 0x0000B488 File Offset: 0x00009688
+        public void CreateScrapFromImage(Image image, Point location)
+        {
+            if (image == null)
+            {
+                return;
+            }
+            using (var bitmap = (Bitmap)image.Clone())
+            {
+                if (location == Point.Empty)
+                {
+                    location = Cursor.Position;
+                }
+                var x = location.X;
+                var y = location.Y;
+                scrapBook.AddScrap((Bitmap)bitmap.Clone(), x, y, bitmap.Width, bitmap.Height);
+            }
+        }
+
+        // Token: 0x06000218 RID: 536 RVA: 0x0000B50C File Offset: 0x0000970C
+        private void CreateScrapFromsource(ScrapSource src)
+        {
+            CreateScrapFromImage(src.GetImage(), src.GetPosition());
+        }
+
+        // Token: 0x06000219 RID: 537 RVA: 0x0000B520 File Offset: 0x00009720
+        void ISingletonForm.DetectExternalStartup(string version, string[] args)
+        {
+            base.Invoke(new Mainform.ExternalStartupDelegate(ExternalStartup), new object[]
+            {
+                version,
+                args
+            });
+        }
+
+        // Token: 0x0600021A RID: 538 RVA: 0x0000B550 File Offset: 0x00009750
+        private void ExternalStartup(string version, string[] args)
+        {
+            if (Application.ProductVersion != version)
+            {
+                MessageBox.Show("SETUNA已经运行在不同的版本。", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
+                return;
+            }
+            if (args.Length > 0)
+            {
+                CommandRun(args);
+                return;
+            }
+            if (optSetuna.Setuna.DupType == SetunaOption.SetunaOptionData.OpeningType.Capture)
+            {
+                StartCapture();
+            }
+        }
+
+        // Token: 0x0600021B RID: 539 RVA: 0x0000B5A8 File Offset: 0x000097A8
+        public void CommandRun(string[] args)
+        {
+            Console.WriteLine("-命令行参数--------------------");
+            var num = 0;
+            var rect = new Rectangle(0, 0, 0, 0);
+            var fname = "";
+            foreach (var text in args)
+            {
+                try
+                {
+                    var text2 = text;
+                    var text3 = "";
+                    if (text.Length > 3)
+                    {
+                        text3 = text2.Substring(0, 3);
+                        if (text3.Substring(0, 1) == "/" && text3.Substring(2, 1) == ":")
+                        {
+                            text2 = text.Substring(text3.Length, text2.Length - text3.Length);
+                        }
+                        else
+                        {
+                            text3 = "";
+                        }
+                    }
+                    if (text3.Length > 0)
+                    {
+                        if (text3 == "/R:")
+                        {
+                            var array = text2.Split(new char[]
+                            {
+                                ','
+                            });
+                            if (array.Length == 4)
+                            {
+                                rect = default(Rectangle);
+                                rect.X = int.Parse(array[0]);
+                                rect.Y = int.Parse(array[1]);
+                                rect.Width = int.Parse(array[2]);
+                                rect.Height = int.Parse(array[3]);
+                                Console.WriteLine("[位置]" + rect.ToString());
+                                goto IL_1C2;
+                            }
+                        }
+                        if (text3 == "/P:")
+                        {
+                            fname = text2;
+                        }
+                        if (text3 == "/C:")
+                        {
+                            if (text2.ToUpper() == "OPTION")
+                            {
+                                num = 1;
+                                goto IL_1C2;
+                            }
+                            if (text2.ToUpper() == "CAPTURE")
+                            {
+                                num = 2;
+                                goto IL_1C2;
+                            }
+                            if (text2.ToUpper() == "SUBMENU")
+                            {
+                                num = 3;
+                                goto IL_1C2;
+                            }
+                        }
+                    }
+                    AddImageList(new ScrapSourcePath(text2));
+                    Console.WriteLine(text2);
+                }
+                catch
+                {
+                    Console.WriteLine("[Error]" + text);
+                }
+            IL_1C2:;
+            }
+            Console.WriteLine("---------------------------------------");
+            if (rect.Width >= 10 && rect.Height >= 10)
+            {
+                CommandCutRect(rect, fname);
+                return;
+            }
+            if (num != 0 && IsStart)
+            {
+                switch (num)
+                {
+                    case 1:
+                        if (!IsOption)
+                        {
+                            Option();
+                            return;
+                        }
+                        break;
+                    case 2:
+                        if (!IsCapture)
+                        {
+                            StartCapture();
+                        }
+                        break;
+                    default:
+                        return;
+                }
+            }
+        }
+
+        // Token: 0x0600021C RID: 540 RVA: 0x0000B80C File Offset: 0x00009A0C
+        private void CommandCutRect(Rectangle rect, string fname)
+        {
+            using (var bitmap = new Bitmap(rect.Width, rect.Height, PixelFormat.Format24bppRgb))
+            {
+                var point = new Point(rect.X, rect.Y);
+                CaptureForm.CopyFromScreen(bitmap, point);
+                if (fname == "")
+                {
+                    AddImageList(new ScrapSourceImage(bitmap, point));
+                }
+            }
+        }
+
+        // Token: 0x0600021D RID: 541 RVA: 0x0000B888 File Offset: 0x00009A88
+        private void Mainform_Shown(object sender, EventArgs e)
+        {
+        }
+
+        // Token: 0x0600021E RID: 542 RVA: 0x0000B88A File Offset: 0x00009A8A
         private void setunaIconMenu_Opening(object sender, CancelEventArgs e)
         {
             e.Cancel = false;
         }
 
-        public void StartCapture()
+
+        private void window_Tick(object sender, EventArgs e)
         {
-            if ((!this.IsCapture && (cap_form != null)) && !this.IsOption)
-            {
-                try
-                {
-                    if (this.frmClickCapture != null)
-                    {
-                        this.frmClickCapture.Stop();
-                    }
-                    this.IsCapture = true;
-                    Console.WriteLine(string.Concat(new object[] { "9 - ", DateTime.Now.ToString(), " ", DateTime.Now.Millisecond }));
-                    cap_form.OnCaptureClose = new CaptureForm.CaptureClosedDelegate(this.EndCapture);
-                    cap_form.ShowCapture(this.optSetuna.Setuna);
-                    Console.WriteLine(string.Concat(new object[] { "16 - ", DateTime.Now.ToString(), " ", DateTime.Now.Millisecond }));
-                }
-                catch (Exception exception)
-                {
-                    Console.WriteLine("Mainform StartCapture Exception:" + exception.Message);
-                    this.IsCapture = false;
-                    if (cap_form != null)
-                    {
-                        cap_form.DialogResult = DialogResult.Cancel;
-                    }
-                    this.EndCapture(cap_form);
-                }
-            }
+            SETUNA.Main.WindowManager.Instance.Update();
         }
 
-        private void timPool_Tick(object sender, EventArgs e)
+        private void SetAllScrapsActive(bool active)
         {
-            if (((this._imgpool.Count == 0) || this.IsCapture) || (this.IsOption || !this.IsStart))
+            if (allScrapActive == active)
             {
-                this.timPool.Stop();
+                return;
+            }
+
+            allScrapActive = active;
+
+            if (active)
+            {
+                forms.ForEach(x => x.Visible = active);
+                forms.Clear();
+
+                Main.Layer.LayerManager.Instance.ResumeRefresh();
             }
             else
             {
-                using (ScrapSource source = this._imgpool.Dequeue())
+                foreach (var item in scrapBook)
                 {
-                    this.CreateScrapFromsource(source);
+                    if (item.Visible)
+                    {
+                        forms.Add(item);
+                    }
+                    else if ((item.StyleForm?.Visible ?? false) == true)
+                    {
+                        forms.Add(item.StyleForm);
+                    }
                 }
+
+                forms.ForEach(x => x.Visible = active);
+
+                Main.Layer.LayerManager.Instance.SuspendRefresh();
             }
         }
 
-        protected override void WndProc(ref Message m)
+        private void delayInitTimer_Tick(object sender, EventArgs e)
         {
-            base.WndProc(ref m);
-            if ((m.Msg == 0x312) && (((int)m.WParam) == 1))
+            if (SETUNA.Main.Cache.CacheManager.Instance.IsInit)
             {
-                this.StartCapture();
+                delayInitTimer.Enabled = false;
+                SETUNA.Main.Layer.LayerManager.Instance.RefreshLayer();
+                SETUNA.Main.Layer.LayerManager.Instance.DelayInit();
             }
         }
 
-        public bool IsCapture
-        {
-            get
-            {
-                return
-                this._iscapture;
-            }
-            set
-            {
-                this._iscapture = value;
-                if (!value && (this._imgpool.Count > 0))
-                {
-                    this.timPool.Start();
-                }
-            }
-        }
 
-        public bool IsOption
-        {
-            get
-            {
-                return
-                this._isoption;
-            }
-            set
-            {
-                this._isoption = value;
-                if (!value && (this._imgpool.Count > 0))
-                {
-                    this.timPool.Start();
-                }
-            }
-        }
 
-        public bool IsStart
-        {
-            get
-            {
-                return
-                this._isstart;
-            }
-            set
-            {
-                this._isstart = value;
-                if (value && (this._imgpool.Count > 0))
-                {
-                    this.timPool.Start();
-                }
-            }
-        }
+        // Token: 0x040000E1 RID: 225
+        private SplashForm frmSplash;
 
+        // Token: 0x040000E2 RID: 226
+        public ScrapBook scrapBook;
+
+        // Token: 0x040000E3 RID: 227
+        public SetunaOption optSetuna;
+
+        // Token: 0x040000E4 RID: 228
+        public KeyItemBook keyBook;
+
+        // Token: 0x040000E5 RID: 229
+        public Queue<ScrapBase> dustbox;
+
+        // Token: 0x040000E6 RID: 230
+        private ClickCapture frmClickCapture;
+
+        // Token: 0x040000E7 RID: 231
+        private static CaptureForm cap_form;
+
+        // Token: 0x040000E8 RID: 232
+        private List<ScrapSource> _imgpool;
+
+        // Token: 0x040000E9 RID: 233
+        private bool _iscapture;
+
+        // Token: 0x040000EA RID: 234
+        private bool _isoption;
+
+        // Token: 0x040000EB RID: 235
+        private bool _isstart;
+
+        // Token: 0x02000041 RID: 65
+        // (Invoke) Token: 0x0600026A RID: 618
         private delegate void ExternalStartupDelegate(string version, string[] args);
+
+        public delegate void MouseWheelCallback(object sender, MouseEventArgs e);
+        public event MouseWheelCallback MouseWheelCallbackEvent;
+
+        private List<Form> forms = new List<Form>();
+        private bool allScrapActive = true;
     }
 }
-

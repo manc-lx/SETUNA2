@@ -1,126 +1,36 @@
-﻿namespace SETUNA.Main
+﻿using System;
+using System.Windows.Forms;
+
+namespace SETUNA.Main
 {
-    using SETUNA.Properties;
-    using System;
-    using System.ComponentModel;
-    using System.Drawing;
-    using System.Windows.Forms;
-
-    public class SplashForm : Form
+    // Token: 0x02000043 RID: 67
+    public partial class SplashForm : BaseForm
     {
-        private IContainer components;
-        private Label label1;
-        private Label lblVer;
-        private PictureBox pictureBox1;
-        public Timer SplashTimer;
-
+        // Token: 0x06000273 RID: 627 RVA: 0x0000D537 File Offset: 0x0000B737
         public SplashForm()
         {
-            this.InitializeComponent();
-            this.lblVer.Text = base.ProductName + " " + Application.ProductVersion;
+            InitializeComponent();
+
+            lblVer.Text = base.ProductName + " " + Application.ProductVersion;
+            label1.Text = URLUtils.NewURL;
         }
 
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing && (this.components != null))
-            {
-                this.components.Dispose();
-            }
-            base.Dispose(disposing);
-        }
-
-        private void InitializeComponent()
-        {
-            this.components = new System.ComponentModel.Container();
-            this.SplashTimer = new System.Windows.Forms.Timer(this.components);
-            this.pictureBox1 = new System.Windows.Forms.PictureBox();
-            this.label1 = new System.Windows.Forms.Label();
-            this.lblVer = new System.Windows.Forms.Label();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
-            this.SuspendLayout();
-            // 
-            // SplashTimer
-            // 
-            this.SplashTimer.Interval = 3000;
-            this.SplashTimer.Tick += new System.EventHandler(this.SplashTimer_Tick);
-            // 
-            // pictureBox1
-            // 
-            this.pictureBox1.InitialImage = null;
-            this.pictureBox1.Location = new System.Drawing.Point(-2, -2);
-            this.pictureBox1.Margin = new System.Windows.Forms.Padding(0);
-            this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(989, 298);
-            this.pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
-            this.pictureBox1.TabIndex = 0;
-            this.pictureBox1.TabStop = false;
-            this.pictureBox1.Click += new System.EventHandler(this.pictureBox1_Click);
-            this.pictureBox1.Image = Resources.Logo;
-            // 
-            // label1
-            // 
-            this.label1.AutoSize = true;
-            this.label1.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.label1.ForeColor = System.Drawing.Color.Black;
-            this.label1.Location = new System.Drawing.Point(202, 375);
-            this.label1.Margin = new System.Windows.Forms.Padding(8, 0, 8, 0);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(553, 30);
-            this.label1.TabIndex = 1;
-            this.label1.Text = "https://github.com/tylearymf/SETUNA2";
-            // 
-            // lblVer
-            // 
-            this.lblVer.ForeColor = System.Drawing.Color.Gray;
-            this.lblVer.Location = new System.Drawing.Point(30, 322);
-            this.lblVer.Margin = new System.Windows.Forms.Padding(8, 0, 8, 0);
-            this.lblVer.Name = "lblVer";
-            this.lblVer.Size = new System.Drawing.Size(915, 45);
-            this.lblVer.TabIndex = 4;
-            this.lblVer.Text = "SETUNA 2.0α";
-            this.lblVer.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            // 
-            // SplashForm
-            // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(15F, 30F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.BackColor = System.Drawing.Color.White;
-            this.ClientSize = new System.Drawing.Size(982, 425);
-            this.ControlBox = false;
-            this.Controls.Add(this.lblVer);
-            this.Controls.Add(this.label1);
-            this.Controls.Add(this.pictureBox1);
-            this.DoubleBuffered = true;
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
-            this.Margin = new System.Windows.Forms.Padding(8, 8, 8, 8);
-            this.MaximizeBox = false;
-            this.MinimizeBox = false;
-            this.Name = "SplashForm";
-            this.ShowIcon = false;
-            this.ShowInTaskbar = false;
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.TopMost = true;
-            this.Load += new System.EventHandler(this.SplashForm_Load);
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
-            this.ResumeLayout(false);
-            this.PerformLayout();
-
-        }
-
-        private void pictureBox1_Click(object sender, EventArgs e)
-        {
-            this.SplashTimer.Enabled = false;
-            base.Close();
-        }
-
+        // Token: 0x06000274 RID: 628 RVA: 0x0000D565 File Offset: 0x0000B765
         private void SplashForm_Load(object sender, EventArgs e)
         {
         }
 
+        // Token: 0x06000275 RID: 629 RVA: 0x0000D567 File Offset: 0x0000B767
         private void SplashTimer_Tick(object sender, EventArgs e)
         {
             base.Close();
         }
+
+        // Token: 0x06000276 RID: 630 RVA: 0x0000D56F File Offset: 0x0000B76F
+        private void pictureBox1_Click(object sender, EventArgs e)
+        {
+            SplashTimer.Enabled = false;
+            base.Close();
+        }
     }
 }
-

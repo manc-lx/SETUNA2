@@ -1,111 +1,63 @@
-﻿namespace SETUNA.Main.StyleItems
+﻿using System;
+using System.Windows.Forms;
+
+namespace SETUNA.Main.StyleItems
 {
-    using System;
-    using System.ComponentModel;
-    using System.Drawing;
-    using System.Windows.Forms;
-
-    public class ToolBoxForm : Form
+    // Token: 0x02000002 RID: 2
+    public partial class ToolBoxForm : BaseForm
     {
-        protected Button cmdCancel;
-        protected Button cmdOK;
-        private IContainer components;
-
+        // Token: 0x06000003 RID: 3 RVA: 0x00002285 File Offset: 0x00000485
         public ToolBoxForm()
         {
-            this.InitializeComponent();
+            InitializeComponent();
         }
 
+        // Token: 0x06000004 RID: 4 RVA: 0x00002293 File Offset: 0x00000493
         public ToolBoxForm(object style)
         {
-            this.InitializeComponent();
-            this.SetStyleToForm(style);
+            InitializeComponent();
+            SetStyleToForm(style);
         }
 
+        // Token: 0x06000005 RID: 5 RVA: 0x000022A8 File Offset: 0x000004A8
+        private void cmdOK_Click(object sender, EventArgs e)
+        {
+            var flag = false;
+            OKCheck(ref flag);
+            if (flag)
+            {
+                return;
+            }
+            base.DialogResult = DialogResult.OK;
+            base.Close();
+        }
+
+        // Token: 0x06000006 RID: 6 RVA: 0x000022D0 File Offset: 0x000004D0
         private void cmdCancel_Click(object sender, EventArgs e)
         {
             base.DialogResult = DialogResult.Cancel;
             base.Close();
         }
 
-        private void cmdOK_Click(object sender, EventArgs e)
-        {
-            bool cancel = false;
-            this.OKCheck(ref cancel);
-            if (!cancel)
-            {
-                base.DialogResult = DialogResult.OK;
-                base.Close();
-            }
-        }
+        // Token: 0x17000001 RID: 1
+        // (get) Token: 0x06000007 RID: 7 RVA: 0x000022DF File Offset: 0x000004DF
+        public object StyleItem => GetStyleFromForm();
 
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing && (this.components != null))
-            {
-                this.components.Dispose();
-            }
-            base.Dispose(disposing);
-        }
-
-        protected virtual object GetStyleFromForm()
-        {
-            throw new Exception("GetStyleFromForm未实现");
-        }
-
-        private void InitializeComponent()
-        {
-            this.cmdOK = new Button();
-            this.cmdCancel = new Button();
-            base.SuspendLayout();
-            this.cmdOK.Anchor = AnchorStyles.Right | AnchorStyles.Bottom;
-            this.cmdOK.Location = new Point(0xa5, 0xd6);
-            this.cmdOK.Name = "cmdOK";
-            this.cmdOK.Size = new Size(70, 0x18);
-            this.cmdOK.TabIndex = 0x3e6;
-            this.cmdOK.Text = "确定";
-            this.cmdOK.UseVisualStyleBackColor = true;
-            this.cmdOK.Click += new EventHandler(this.cmdOK_Click);
-            this.cmdCancel.Anchor = AnchorStyles.None;
-            this.cmdCancel.DialogResult = DialogResult.Cancel;
-            this.cmdCancel.Location = new Point(0xf1, 0xd6);
-            this.cmdCancel.Name = "cmdCancel";
-            this.cmdCancel.Size = new Size(70, 0x18);
-            this.cmdCancel.TabIndex = 0x3e7;
-            this.cmdCancel.Text = "取消";
-            this.cmdCancel.UseVisualStyleBackColor = true;
-            this.cmdCancel.Click += new EventHandler(this.cmdCancel_Click);
-            base.AcceptButton = this.cmdOK;
-            base.AutoScaleDimensions = new SizeF(6f, 12f);
-            base.AutoScaleMode = AutoScaleMode.Font;
-            base.CancelButton = this.cmdCancel;
-            base.ClientSize = new Size(0x13f, 0xf6);
-            base.Controls.Add(this.cmdCancel);
-            base.Controls.Add(this.cmdOK);
-            base.FormBorderStyle = FormBorderStyle.FixedToolWindow;
-            base.KeyPreview = true;
-            base.MaximizeBox = false;
-            base.MinimizeBox = false;
-            base.Name = "ToolBoxForm";
-            base.Padding = new Padding(5);
-            base.ShowIcon = false;
-            base.ShowInTaskbar = false;
-            base.StartPosition = FormStartPosition.CenterParent;
-            this.Text = "ToolBoxForm1";
-            base.ResumeLayout(false);
-        }
-
-        protected virtual void OKCheck(ref bool cancel)
-        {
-        }
-
+        // Token: 0x06000008 RID: 8 RVA: 0x000022E7 File Offset: 0x000004E7
         protected virtual void SetStyleToForm(object style)
         {
             throw new Exception("SetStyleToForm未实现");
         }
 
-        public object StyleItem =>
-            this.GetStyleFromForm();
+        // Token: 0x06000009 RID: 9 RVA: 0x000022F3 File Offset: 0x000004F3
+        protected virtual object GetStyleFromForm()
+        {
+            throw new Exception("GetStyleFromForm未实现");
+        }
+
+        // Token: 0x0600000A RID: 10 RVA: 0x000022FF File Offset: 0x000004FF
+        protected virtual void OKCheck(ref bool cancel)
+        {
+        }
     }
 }
-

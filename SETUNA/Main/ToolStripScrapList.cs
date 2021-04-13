@@ -1,36 +1,30 @@
-﻿namespace SETUNA.Main
-{
-    using System;
-    using System.Collections;
+﻿using System.Collections;
 
+namespace SETUNA.Main
+{
+    // Token: 0x020000A1 RID: 161
     public class ToolStripScrapList : ToolStripAbstractList
     {
+        // Token: 0x0600053C RID: 1340 RVA: 0x000246B1 File Offset: 0x000228B1
         public ToolStripScrapList(string text, ScrapBook scrapbook) : base(text, scrapbook)
         {
         }
 
-        protected override ArrayList GetItems()
-        {
-            ArrayList list = new ArrayList();
-            foreach (ScrapBase base2 in base._scrapbook)
-            {
-                list.Add(base2);
-            }
-            return list;
-        }
-
+        // Token: 0x0600053D RID: 1341 RVA: 0x000246BB File Offset: 0x000228BB
         protected override bool IsExists()
         {
-            if (base._scrapbook == null)
+            return _scrapbook != null && _scrapbook.ScrapCount > 0;
+        }
+
+        // Token: 0x0600053E RID: 1342 RVA: 0x000246D8 File Offset: 0x000228D8
+        protected override ArrayList GetItems()
+        {
+            var arrayList = new ArrayList();
+            foreach (var value in _scrapbook)
             {
-                return false;
+                arrayList.Add(value);
             }
-            if (base._scrapbook.ScrapCount <= 0)
-            {
-                return false;
-            }
-            return true;
+            return arrayList;
         }
     }
 }
-

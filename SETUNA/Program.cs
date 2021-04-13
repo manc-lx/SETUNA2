@@ -1,43 +1,33 @@
-﻿namespace SETUNA
-{
-    using com.clearunit;
-    using System;
-    using System.Runtime.InteropServices;
-    using System.Windows.Forms;
+﻿using System;
+using System.Windows.Forms;
+using com.clearunit;
 
+namespace SETUNA
+{
+    // Token: 0x02000086 RID: 134
     internal static class Program
     {
+        // Token: 0x0600046B RID: 1131 RVA: 0x0001CA08 File Offset: 0x0001AC08
         [STAThread]
         private static void Main(string[] args)
         {
-            try
+            // 不是Win10周年更新版本及以上的，设置DPI感知
+            var osVersion = Environment.OSVersion.Version;
+            if (osVersion == null || osVersion.Major < 10 || osVersion.Build < 14393)
             {
-                string[] strArray = RuntimeEnvironment.GetSystemVersion().Trim(new char[] { 'v' }).Split(new char[] { '.' });
-                if (strArray.Length > 0)
-                {
-                    int num;
-                    int.TryParse(strArray[0], out num);
-                    if (num < 2)
-                    {
-                        MessageBox.Show("需安装 .NET Framework 2.0 或以上版本。");
-                        return;
-                    }
-                }
+                SETUNA.Main.WindowsAPI.SetProcessDPIAware();
             }
-            catch
-            {
-            }
-            SingletonApplication instance = SingletonApplication.GetInstance(Application.ProductVersion, args);
+
+            var instance = SingletonApplication.GetInstance(Application.ProductVersion, args);
             if (instance.Register())
             {
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
-                Mainform implement = new Mainform();
-                instance.AddSingletonFormListener(implement);
-                implement.CommandRun(args);
-                Application.Run(implement);
+                var mainform = new Mainform();
+                instance.AddSingletonFormListener(mainform);
+                mainform.CommandRun(args);
+                Application.Run(mainform);
             }
         }
     }
 }
-

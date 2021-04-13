@@ -1,48 +1,56 @@
-﻿namespace SETUNA.Main
-{
-    using System;
-    using System.Drawing;
-    using System.IO;
+﻿using System;
+using System.Drawing;
+using System.IO;
 
+namespace SETUNA.Main
+{
+    // Token: 0x0200003E RID: 62
     public class ScrapSourcePath : ScrapSource
     {
-        private string path;
+        public override bool IsDone => true;
 
+
+        // Token: 0x06000261 RID: 609 RVA: 0x0000D139 File Offset: 0x0000B339
         public ScrapSourcePath(string path)
         {
             this.path = path;
         }
 
+        // Token: 0x06000262 RID: 610 RVA: 0x0000D148 File Offset: 0x0000B348
         public override Image GetImage()
         {
-            Image image = null;
-            FileStream stream = null;
+            Image result = null;
+            FileStream fileStream = null;
             try
             {
-                if (!File.Exists(this.path))
+                if (File.Exists(path))
                 {
-                    return image;
-                }
-                try
-                {
-                    stream = new FileStream(this.path, FileMode.Open, FileAccess.Read);
-                    image = Image.FromStream(stream);
-                    base._name = Path.GetFileNameWithoutExtension(this.path);
-                }
-                finally
-                {
-                    if (stream != null)
+                    try
                     {
-                        stream.Close();
+                        result = BitmapUtils.FromPath(path);
+                        _name = Path.GetFileNameWithoutExtension(path);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex);
+                    }
+                    finally
+                    {
+                        if (fileStream != null)
+                        {
+                            fileStream.Close();
+                        }
                     }
                 }
             }
             catch
             {
-                Console.WriteLine("ScrapSourcePath错误∶" + this.path);
+                Console.WriteLine("ScrapSourcePath错误∶" + path);
             }
-            return image;
+            return result;
         }
+
+        // Token: 0x0400010F RID: 271
+        private string path;
     }
 }
-

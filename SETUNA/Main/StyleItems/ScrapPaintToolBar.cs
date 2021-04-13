@@ -1,272 +1,174 @@
-﻿namespace SETUNA.Main.StyleItems
+﻿using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Windows.Forms;
+
+namespace SETUNA.Main.StyleItems
 {
-    using SETUNA.Properties;
-    using System;
-    using System.Collections.Generic;
-    using System.ComponentModel;
-    using System.Drawing;
-    using System.Runtime.CompilerServices;
-    using System.Windows.Forms;
-
-    public class ScrapPaintToolBar : Form
+    // Token: 0x02000024 RID: 36
+    public partial class ScrapPaintToolBar : BaseForm
     {
-        private ScrapPaintWindow _parent;
-        private PaintTool activeTool;
-        private CheckBox chkErase;
-        private CheckBox chkPen;
-        private CheckBox chkText;
-        private ColorDialog colorDialog1;
-        private IContainer components;
-        private Panel panel1;
-        private PictureBox picColorA;
-        private PictureBox picColorB;
-        private TableLayoutPanel tableLayoutPanel1;
-        private TableLayoutPanel tableLayoutPanel2;
-        private List<CheckBox> tools;
-        private ToolTip toolTip1;
+        // Token: 0x14000012 RID: 18
+        // (add) Token: 0x06000183 RID: 387 RVA: 0x0000922E File Offset: 0x0000742E
+        // (remove) Token: 0x06000184 RID: 388 RVA: 0x00009247 File Offset: 0x00007447
+        public event ScrapPaintToolBar.SelectToolDelegate SelectTool;
 
-        public event SelectToolDelegate SelectTool;
+        // Token: 0x17000049 RID: 73
+        // (get) Token: 0x06000186 RID: 390 RVA: 0x0000926E File Offset: 0x0000746E
+        // (set) Token: 0x06000185 RID: 389 RVA: 0x00009260 File Offset: 0x00007460
+        public Color ColorA
+        {
+            get => picColorA.BackColor;
+            set => picColorA.BackColor = value;
+        }
 
+        // Token: 0x1700004A RID: 74
+        // (get) Token: 0x06000188 RID: 392 RVA: 0x00009289 File Offset: 0x00007489
+        // (set) Token: 0x06000187 RID: 391 RVA: 0x0000927B File Offset: 0x0000747B
+        public Color ColorB
+        {
+            get => picColorB.BackColor;
+            set => picColorB.BackColor = value;
+        }
+
+        // Token: 0x06000189 RID: 393 RVA: 0x00009298 File Offset: 0x00007498
         public ScrapPaintToolBar(ScrapPaintWindow parent)
         {
-            this._parent = parent;
-            this.InitializeComponent();
-            this.activeTool = null;
-            this.tools = new List<CheckBox>();
-            this.tools.Add(this.chkPen);
-            this.tools.Add(this.chkErase);
-            this.tools.Add(this.chkText);
+            _parent = parent;
+            InitializeComponent();
+            activeTool = null;
+            tools = new List<CheckBox>
+            {
+                chkPen,
+                chkErase,
+                chkText
+            };
         }
 
-        public void ChangeColor()
+        // Token: 0x0600018A RID: 394 RVA: 0x00009300 File Offset: 0x00007500
+        public void SwitchTool(ScrapPaintToolBar.ToolKind kind)
         {
-            Color backColor = this.picColorA.BackColor;
-            this.picColorA.BackColor = this.picColorB.BackColor;
-            this.picColorB.BackColor = backColor;
+            switch (kind)
+            {
+                case ScrapPaintToolBar.ToolKind.笔工具:
+                    chkPen_Click(chkPen, null);
+                    return;
+                case ScrapPaintToolBar.ToolKind.消しゴム工具:
+                    chkPen_Click(chkErase, null);
+                    return;
+                case ScrapPaintToolBar.ToolKind.文字工具:
+                    chkPen_Click(chkText, null);
+                    return;
+                default:
+                    return;
+            }
         }
 
+        // Token: 0x0600018B RID: 395 RVA: 0x0000934C File Offset: 0x0000754C
+        private void SelecionTool()
+        {
+            if (chkPen.Checked)
+            {
+                OnSelectTool(new PenTool(ColorA, _parent));
+                return;
+            }
+            if (chkErase.Checked)
+            {
+                OnSelectTool(new PenTool(PenTool.EraseColor, _parent));
+                return;
+            }
+            if (chkText.Checked)
+            {
+                OnSelectTool(new TextTool(_parent));
+                return;
+            }
+            OnSelectTool(null);
+        }
+
+        // Token: 0x0600018C RID: 396 RVA: 0x000093C8 File Offset: 0x000075C8
+        private void OnSelectTool(PaintTool tool)
+        {
+            activeTool = tool;
+            if (activeTool != null)
+            {
+                activeTool.ShowToolBar(_parent);
+                _parent.Activate();
+            }
+            if (SelectTool != null)
+            {
+                SelectTool(tool);
+            }
+        }
+
+        // Token: 0x0600018D RID: 397 RVA: 0x00009414 File Offset: 0x00007614
         private void chkPen_Click(object sender, EventArgs e)
         {
-            CheckBox box = null;
-            foreach (CheckBox box2 in this.tools)
+            CheckBox obj = null;
+            foreach (var checkBox in tools)
             {
-                if (box2.Checked)
+                if (checkBox.Checked)
                 {
-                    box = box2;
+                    obj = checkBox;
                     break;
                 }
             }
-            CheckBox box3 = null;
-            foreach (CheckBox box4 in this.tools)
+            CheckBox checkBox2 = null;
+            foreach (var checkBox3 in tools)
             {
-                if (box4.Equals(sender))
+                if (checkBox3.Equals(sender))
                 {
-                    box4.Checked = true;
-                    box3 = box4;
+                    checkBox3.Checked = true;
+                    checkBox2 = checkBox3;
                 }
                 else
                 {
-                    box4.Checked = false;
+                    checkBox3.Checked = false;
                 }
             }
-            if ((box3 != null) && !box3.Equals(box))
+            if (checkBox2 != null && !checkBox2.Equals(obj))
             {
-                this.SelecionTool();
+                SelecionTool();
             }
         }
 
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing && (this.components != null))
-            {
-                this.components.Dispose();
-            }
-            base.Dispose(disposing);
-        }
-
-        private void InitializeComponent()
-        {
-            this.components = new Container();
-            this.tableLayoutPanel1 = new TableLayoutPanel();
-            this.panel1 = new Panel();
-            this.picColorA = new PictureBox();
-            this.picColorB = new PictureBox();
-            this.tableLayoutPanel2 = new TableLayoutPanel();
-            this.chkPen = new CheckBox();
-            this.chkText = new CheckBox();
-            this.chkErase = new CheckBox();
-            this.toolTip1 = new ToolTip(this.components);
-            this.colorDialog1 = new ColorDialog();
-            this.tableLayoutPanel1.SuspendLayout();
-            this.panel1.SuspendLayout();
-            ((ISupportInitialize) this.picColorA).BeginInit();
-            ((ISupportInitialize) this.picColorB).BeginInit();
-            this.tableLayoutPanel2.SuspendLayout();
-            base.SuspendLayout();
-            this.tableLayoutPanel1.ColumnCount = 1;
-            this.tableLayoutPanel1.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50f));
-            this.tableLayoutPanel1.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50f));
-            this.tableLayoutPanel1.Controls.Add(this.panel1, 0, 1);
-            this.tableLayoutPanel1.Controls.Add(this.tableLayoutPanel2, 0, 0);
-            this.tableLayoutPanel1.Location = new Point(0, 0);
-            this.tableLayoutPanel1.Name = "tableLayoutPanel1";
-            this.tableLayoutPanel1.RowCount = 2;
-            this.tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 81.70213f));
-            this.tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 18.29787f));
-            this.tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Absolute, 20f));
-            this.tableLayoutPanel1.Size = new Size(0x2e, 0x107);
-            this.tableLayoutPanel1.TabIndex = 0;
-            this.panel1.BorderStyle = BorderStyle.Fixed3D;
-            this.panel1.Controls.Add(this.picColorA);
-            this.panel1.Controls.Add(this.picColorB);
-            this.panel1.Dock = DockStyle.Fill;
-            this.panel1.Location = new Point(2, 0xd8);
-            this.panel1.Margin = new Padding(2);
-            this.panel1.Name = "panel1";
-            this.panel1.Size = new Size(0x2a, 0x2d);
-            this.panel1.TabIndex = 1;
-            this.picColorA.BackColor = Color.White;
-            this.picColorA.BorderStyle = BorderStyle.FixedSingle;
-            this.picColorA.Cursor = Cursors.Hand;
-            this.picColorA.Location = new Point(6, 5);
-            this.picColorA.Name = "picColorA";
-            this.picColorA.Size = new Size(0x1a, 0x1a);
-            this.picColorA.TabIndex = 0;
-            this.picColorA.TabStop = false;
-            this.toolTip1.SetToolTip(this.picColorA, "前景色");
-            this.picColorA.BackColorChanged += new EventHandler(this.picColorA_BackColorChanged);
-            this.picColorA.Click += new EventHandler(this.picColorA_Click);
-            this.picColorB.BackColor = Color.Black;
-            this.picColorB.BorderStyle = BorderStyle.FixedSingle;
-            this.picColorB.Cursor = Cursors.Hand;
-            this.picColorB.Location = new Point(0x16, 0x13);
-            this.picColorB.Name = "picColorB";
-            this.picColorB.Size = new Size(0x1a, 0x1a);
-            this.picColorB.TabIndex = 1;
-            this.picColorB.TabStop = false;
-            this.toolTip1.SetToolTip(this.picColorB, "背景色");
-            this.picColorB.Click += new EventHandler(this.picColorB_Click);
-            this.tableLayoutPanel2.ColumnCount = 1;
-            this.tableLayoutPanel2.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 28f));
-            this.tableLayoutPanel2.Controls.Add(this.chkPen, 0, 0);
-            this.tableLayoutPanel2.Controls.Add(this.chkText, 0, 2);
-            this.tableLayoutPanel2.Controls.Add(this.chkErase, 0, 1);
-            this.tableLayoutPanel2.Dock = DockStyle.Fill;
-            this.tableLayoutPanel2.Location = new Point(3, 3);
-            this.tableLayoutPanel2.Name = "tableLayoutPanel2";
-            this.tableLayoutPanel2.RowCount = 4;
-            this.tableLayoutPanel2.RowStyles.Add(new RowStyle(SizeType.Absolute, 30f));
-            this.tableLayoutPanel2.RowStyles.Add(new RowStyle(SizeType.Absolute, 30f));
-            this.tableLayoutPanel2.RowStyles.Add(new RowStyle(SizeType.Absolute, 30f));
-            this.tableLayoutPanel2.RowStyles.Add(new RowStyle(SizeType.Absolute, 20f));
-            this.tableLayoutPanel2.Size = new Size(40, 0xd0);
-            this.tableLayoutPanel2.TabIndex = 2;
-            this.chkPen.Appearance = Appearance.Button;
-            this.chkPen.AutoCheck = false;
-            this.chkPen.Dock = DockStyle.Fill;
-            this.chkPen.FlatStyle = FlatStyle.Popup;
-            this.chkPen.Image = Resources.pi_pen;
-            this.chkPen.ImageAlign = ContentAlignment.BottomCenter;
-            this.chkPen.Location = new Point(1, 1);
-            this.chkPen.Margin = new Padding(1);
-            this.chkPen.Name = "chkPen";
-            this.chkPen.Size = new Size(0x26, 0x1c);
-            this.chkPen.TabIndex = 4;
-            this.toolTip1.SetToolTip(this.chkPen, "笔工具");
-            this.chkPen.UseVisualStyleBackColor = true;
-            this.chkPen.Click += new EventHandler(this.chkPen_Click);
-            this.chkText.Appearance = Appearance.Button;
-            this.chkText.AutoCheck = false;
-            this.chkText.Dock = DockStyle.Fill;
-            this.chkText.FlatStyle = FlatStyle.Popup;
-            this.chkText.Image = Resources.pi_text;
-            this.chkText.ImageAlign = ContentAlignment.BottomCenter;
-            this.chkText.Location = new Point(1, 0x3d);
-            this.chkText.Margin = new Padding(1);
-            this.chkText.Name = "chkText";
-            this.chkText.Size = new Size(0x26, 0x1c);
-            this.chkText.TabIndex = 8;
-            this.toolTip1.SetToolTip(this.chkText, "文本工具");
-            this.chkText.UseVisualStyleBackColor = true;
-            this.chkText.Click += new EventHandler(this.chkPen_Click);
-            this.chkErase.Appearance = Appearance.Button;
-            this.chkErase.AutoCheck = false;
-            this.chkErase.Dock = DockStyle.Fill;
-            this.chkErase.FlatStyle = FlatStyle.Popup;
-            this.chkErase.Image = Resources.pi_erase;
-            this.chkErase.ImageAlign = ContentAlignment.BottomCenter;
-            this.chkErase.Location = new Point(1, 0x1f);
-            this.chkErase.Margin = new Padding(1);
-            this.chkErase.Name = "chkErase";
-            this.chkErase.Size = new Size(0x26, 0x1c);
-            this.chkErase.TabIndex = 5;
-            this.toolTip1.SetToolTip(this.chkErase, "橡皮擦工具");
-            this.chkErase.UseVisualStyleBackColor = true;
-            this.chkErase.Click += new EventHandler(this.chkPen_Click);
-            this.colorDialog1.FullOpen = true;
-            base.AutoScaleDimensions = new SizeF(6f, 12f);
-            base.AutoScaleMode = AutoScaleMode.Font;
-            base.ClientSize = new Size(50, 0x120);
-            base.ControlBox = false;
-            base.Controls.Add(this.tableLayoutPanel1);
-            base.FormBorderStyle = FormBorderStyle.FixedToolWindow;
-            base.KeyPreview = true;
-            this.MinimumSize = new Size(0x34, 290);
-            base.Name = "ScrapPaintToolBar";
-            base.ShowIcon = false;
-            base.ShowInTaskbar = false;
-            base.StartPosition = FormStartPosition.Manual;
-            this.Text = "工具";
-            base.TopMost = true;
-            base.FormClosing += new FormClosingEventHandler(this.ScrapPaintToolBar_FormClosing);
-            this.tableLayoutPanel1.ResumeLayout(false);
-            this.panel1.ResumeLayout(false);
-            ((ISupportInitialize) this.picColorA).EndInit();
-            ((ISupportInitialize) this.picColorB).EndInit();
-            this.tableLayoutPanel2.ResumeLayout(false);
-            base.ResumeLayout(false);
-        }
-
-        private void OnSelectTool(PaintTool tool)
-        {
-            this.activeTool = tool;
-            if (this.activeTool != null)
-            {
-                this.activeTool.ShowToolBar(this._parent);
-                this._parent.Activate();
-            }
-            if (this.SelectTool != null)
-            {
-                this.SelectTool(tool);
-            }
-        }
-
-        private void picColorA_BackColorChanged(object sender, EventArgs e)
-        {
-            if (this.activeTool != null)
-            {
-                this.activeTool.ChangeColor(this.ColorA);
-            }
-        }
-
+        // Token: 0x0600018E RID: 398 RVA: 0x000094DC File Offset: 0x000076DC
         private void picColorA_Click(object sender, EventArgs e)
         {
-            this.colorDialog1.Color = this.picColorA.BackColor;
-            if (this.colorDialog1.ShowDialog() == DialogResult.OK)
+            colorDialog1.Color = picColorA.BackColor;
+            if (colorDialog1.ShowDialog() == DialogResult.OK)
             {
-                this.picColorA.BackColor = this.colorDialog1.Color;
+                picColorA.BackColor = colorDialog1.Color;
             }
         }
 
+        // Token: 0x0600018F RID: 399 RVA: 0x00009518 File Offset: 0x00007718
         private void picColorB_Click(object sender, EventArgs e)
         {
-            this.colorDialog1.Color = this.picColorB.BackColor;
-            if (this.colorDialog1.ShowDialog() == DialogResult.OK)
+            colorDialog1.Color = picColorB.BackColor;
+            if (colorDialog1.ShowDialog() == DialogResult.OK)
             {
-                this.picColorB.BackColor = this.colorDialog1.Color;
+                picColorB.BackColor = colorDialog1.Color;
             }
         }
 
+        // Token: 0x06000190 RID: 400 RVA: 0x00009554 File Offset: 0x00007754
+        public void ChangeColor()
+        {
+            var backColor = picColorA.BackColor;
+            picColorA.BackColor = picColorB.BackColor;
+            picColorB.BackColor = backColor;
+        }
+
+        // Token: 0x06000191 RID: 401 RVA: 0x0000958F File Offset: 0x0000778F
+        private void picColorA_BackColorChanged(object sender, EventArgs e)
+        {
+            if (activeTool != null)
+            {
+                activeTool.ChangeColor(ColorA);
+            }
+        }
+
+        // Token: 0x06000192 RID: 402 RVA: 0x000095AA File Offset: 0x000077AA
         private void ScrapPaintToolBar_FormClosing(object sender, FormClosingEventArgs e)
         {
             if (e.CloseReason == CloseReason.UserClosing)
@@ -275,72 +177,28 @@
             }
         }
 
-        private void SelecionTool()
-        {
-            if (this.chkPen.Checked)
-            {
-                this.OnSelectTool(new PenTool(this.ColorA, this._parent));
-            }
-            else if (this.chkErase.Checked)
-            {
-                this.OnSelectTool(new PenTool(PenTool.EraseColor, this._parent));
-            }
-            else if (this.chkText.Checked)
-            {
-                this.OnSelectTool(new TextTool(this._parent));
-            }
-            else
-            {
-                this.OnSelectTool(null);
-            }
-        }
+        // Token: 0x040000B7 RID: 183
+        private ScrapPaintWindow _parent;
 
-        public void SwitchTool(ToolKind kind)
-        {
-            switch (kind)
-            {
-                case ToolKind.笔工具:
-                    this.chkPen_Click(this.chkPen, null);
-                    return;
+        // Token: 0x040000B8 RID: 184
+        private List<CheckBox> tools;
 
-                case ToolKind.消しゴム工具:
-                    this.chkPen_Click(this.chkErase, null);
-                    return;
+        // Token: 0x040000B9 RID: 185
+        private PaintTool activeTool;
 
-                case ToolKind.文字工具:
-                    this.chkPen_Click(this.chkText, null);
-                    return;
-            }
-        }
-
-        public Color ColorA
-        {
-            get{return  
-                this.picColorA.BackColor;}
-            set
-            {
-                this.picColorA.BackColor = value;
-            }
-        }
-
-        public Color ColorB
-        {
-            get{return  
-                this.picColorB.BackColor;}
-            set
-            {
-                this.picColorB.BackColor = value;
-            }
-        }
-
+        // Token: 0x02000025 RID: 37
+        // (Invoke) Token: 0x06000194 RID: 404
         public delegate void SelectToolDelegate(PaintTool tool);
 
+        // Token: 0x02000026 RID: 38
         public enum ToolKind
         {
+            // Token: 0x040000BB RID: 187
             笔工具,
+            // Token: 0x040000BC RID: 188
             消しゴム工具,
+            // Token: 0x040000BD RID: 189
             文字工具
         }
     }
 }
-

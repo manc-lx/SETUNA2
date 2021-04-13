@@ -1,235 +1,219 @@
-﻿namespace SETUNA.Main
+﻿using System;
+using System.ComponentModel;
+using System.Drawing;
+using System.Threading;
+using System.Windows.Forms;
+
+namespace SETUNA.Main
 {
-    using System;
-    using System.ComponentModel;
-    using System.Drawing;
-    using System.Runtime.CompilerServices;
-    using System.Threading;
-    using System.Windows.Forms;
-
-    public sealed class CaptureInfo : Form
+    // Token: 0x020000A7 RID: 167
+    public sealed partial class CaptureInfo : BaseForm
     {
-        private bool _isDrag;
-        private System.Drawing.Image baseImage;
-        private Color colMouse;
-        private IContainer components;
-        private bool isActive;
-        private Point ptMouse;
-        private Point ptStart;
-        private Thread trd;
+        // Token: 0x06000563 RID: 1379 RVA: 0x00025A2C File Offset: 0x00023C2C
+        ~CaptureInfo()
+        {
+        }
 
+        // Token: 0x06000564 RID: 1380 RVA: 0x00025A54 File Offset: 0x00023C54
+        protected override void OnClosing(CancelEventArgs e)
+        {
+            if (baseImage != null)
+            {
+                baseImage.Dispose();
+            }
+            baseImage = null;
+            base.OnClosing(e);
+        }
+
+        // Token: 0x170000BF RID: 191
+        // (set) Token: 0x06000565 RID: 1381 RVA: 0x00025A77 File Offset: 0x00023C77
+        public Image Image
+        {
+            set => baseImage = (Image)value.Clone();
+        }
+
+        // Token: 0x170000C0 RID: 192
+        // (get) Token: 0x06000567 RID: 1383 RVA: 0x00025A93 File Offset: 0x00023C93
+        // (set) Token: 0x06000566 RID: 1382 RVA: 0x00025A8A File Offset: 0x00023C8A
+        public Point MouseLocation
+        {
+            get => ptMouse;
+            set => ptMouse = value;
+        }
+
+        // Token: 0x170000C1 RID: 193
+        // (get) Token: 0x06000569 RID: 1385 RVA: 0x00025AA4 File Offset: 0x00023CA4
+        // (set) Token: 0x06000568 RID: 1384 RVA: 0x00025A9B File Offset: 0x00023C9B
+        public Point StartPoint
+        {
+            get => ptStart;
+            set => ptStart = value;
+        }
+
+        // Token: 0x170000C2 RID: 194
+        // (get) Token: 0x0600056B RID: 1387 RVA: 0x00025AB5 File Offset: 0x00023CB5
+        // (set) Token: 0x0600056A RID: 1386 RVA: 0x00025AAC File Offset: 0x00023CAC
+        public Color MouseColor
+        {
+            get => colMouse;
+            set => colMouse = value;
+        }
+
+        // Token: 0x170000C3 RID: 195
+        // (get) Token: 0x0600056D RID: 1389 RVA: 0x00025AC6 File Offset: 0x00023CC6
+        // (set) Token: 0x0600056C RID: 1388 RVA: 0x00025ABD File Offset: 0x00023CBD
+        public bool IsSelecting
+        {
+            get => _isDrag;
+            set => _isDrag = value;
+        }
+
+        // Token: 0x0600056E RID: 1390 RVA: 0x00025ACE File Offset: 0x00023CCE
         public CaptureInfo()
         {
-            this.InitializeComponent();
-            this.baseImage = null;
+            InitializeComponent();
+            baseImage = null;
             base.Top = 100;
         }
 
-        private void CaptureInfo_FormClosing(object sender, FormClosingEventArgs e)
-        {
-            if (this.trd != null)
-            {
-                this.trd.Abort();
-            }
-        }
-
-        private void CaptureInfo_Load(object sender, EventArgs e)
-        {
-        }
-
-        private void CaptureInfo_MouseDown(object sender, MouseEventArgs e)
-        {
-            this.ptStart = new Point(e.X, e.Y);
-            this.isActive = true;
-            base.Opacity = 0.5;
-            this.Refresh();
-        }
-
-        private void CaptureInfo_MouseMove(object sender, MouseEventArgs e)
-        {
-            if (this.isActive)
-            {
-                base.Left += e.X - this.ptStart.X;
-                base.Top += e.Y - this.ptStart.Y;
-                this.Refresh();
-            }
-        }
-
-        private void CaptureInfo_MouseUp(object sender, MouseEventArgs e)
-        {
-            this.isActive = false;
-            base.Opacity = 1.0;
-            this.Refresh();
-        }
-
+        // Token: 0x0600056F RID: 1391 RVA: 0x00025AEC File Offset: 0x00023CEC
         private void CaptureInfo_Paint(object sender, PaintEventArgs e)
         {
-            if (this.isActive || (this.baseImage == null))
+            if (isActive || baseImage == null)
             {
                 e.Graphics.FillRectangle(new SolidBrush(Color.Black), 0, 0, base.Width, base.Height);
             }
             else
             {
-                e.Graphics.DrawImageUnscaled(this.baseImage, -base.Left, -base.Top, base.Width, base.Height);
+                e.Graphics.DrawImageUnscaled(baseImage, -base.Left, -base.Top, base.Width, base.Height);
                 e.Graphics.FillRectangle(new SolidBrush(Color.FromArgb(180, 0, 0, 0)), 0, 0, base.Width, base.Height);
             }
-            Point point = new Point(10, 10);
-            Font font = new Font("Segoe UI Symbol", 9f);
-            e.Graphics.DrawString("X:" + this.ptMouse.X.ToString(), font, new SolidBrush(Color.White), (PointF) point);
-            e.Graphics.DrawString("Y:" + this.ptMouse.Y.ToString(), font, new SolidBrush(Color.White), (float) point.X, (point.Y + font.GetHeight()) + 3f);
-            if (this._isDrag)
+            var p = new Point(10, 10);
+            var font = new Font("Segoe UI Symbol", 9f);
+            e.Graphics.DrawString("X:" + ptMouse.X.ToString(), font, new SolidBrush(Color.White), p);
+            e.Graphics.DrawString("Y:" + ptMouse.Y.ToString(), font, new SolidBrush(Color.White), p.X, p.Y + font.GetHeight() + 3f);
+            if (_isDrag)
             {
-                e.Graphics.DrawString("W:" + Math.Abs((int) (this.ptMouse.X - this.ptStart.X)).ToString(), font, new SolidBrush(Color.White), (float) (point.X + 50), (float) point.Y);
-                e.Graphics.DrawString("H:" + Math.Abs((int) (this.ptMouse.Y - this.ptStart.Y)).ToString(), font, new SolidBrush(Color.White), (float) (point.X + 50), (point.Y + font.GetHeight()) + 3f);
+                e.Graphics.DrawString("W:" + Math.Abs(ptMouse.X - ptStart.X).ToString(), font, new SolidBrush(Color.White), p.X + 50, p.Y);
+                e.Graphics.DrawString("H:" + Math.Abs(ptMouse.Y - ptStart.Y).ToString(), font, new SolidBrush(Color.White), p.X + 50, p.Y + font.GetHeight() + 3f);
             }
             else
             {
-                e.Graphics.DrawString("W:----", font, new SolidBrush(Color.White), (float) (point.X + 50), (float) point.Y);
-                e.Graphics.DrawString("H:----", font, new SolidBrush(Color.White), (float) (point.X + 50), (point.Y + font.GetHeight()) + 3f);
+                e.Graphics.DrawString("W:----", font, new SolidBrush(Color.White), p.X + 50, p.Y);
+                e.Graphics.DrawString("H:----", font, new SolidBrush(Color.White), p.X + 50, p.Y + font.GetHeight() + 3f);
             }
-            point.Y += 40;
-            e.Graphics.FillRectangle(new SolidBrush(this.colMouse), new Rectangle(point.X, point.Y, 30, 30));
-            e.Graphics.DrawString("红：" + this.colMouse.R.ToString(), font, new SolidBrush(Color.White), (float) (point.X + 0x23), (float) point.Y);
-            point.Y += ((int) font.GetHeight()) + 3;
-            e.Graphics.DrawString("绿：" + this.colMouse.G.ToString(), font, new SolidBrush(Color.White), (float) (point.X + 0x23), (float) point.Y);
-            point.Y += ((int) font.GetHeight()) + 3;
-            e.Graphics.DrawString("蓝：" + this.colMouse.B.ToString(), font, new SolidBrush(Color.White), (float) (point.X + 0x23), (float) point.Y);
-            point.Y += ((int) font.GetHeight()) + 3;
-            string introduced12 = this.colMouse.R.ToString("X2");
-            string introduced13 = this.colMouse.G.ToString("X2");
-            e.Graphics.DrawString("#:" + introduced12 + introduced13 + this.colMouse.B.ToString("X2"), font, new SolidBrush(Color.White), (float) (point.X + 0x23), (float) point.Y);
+            p.Y += 40;
+            e.Graphics.FillRectangle(new SolidBrush(colMouse), new Rectangle(p.X, p.Y, 30, 30));
+            e.Graphics.DrawString("红：" + colMouse.R.ToString(), font, new SolidBrush(Color.White), p.X + 35, p.Y);
+            p.Y += (int)font.GetHeight() + 3;
+            e.Graphics.DrawString("绿：" + colMouse.G.ToString(), font, new SolidBrush(Color.White), p.X + 35, p.Y);
+            p.Y += (int)font.GetHeight() + 3;
+            e.Graphics.DrawString("蓝：" + colMouse.B.ToString(), font, new SolidBrush(Color.White), p.X + 35, p.Y);
+            p.Y += (int)font.GetHeight() + 3;
+            e.Graphics.DrawString("#:" + colMouse.R.ToString("X2") + colMouse.G.ToString("X2") + colMouse.B.ToString("X2"), font, new SolidBrush(Color.White), p.X + 35, p.Y);
         }
 
-        private void CaptureInfo_Shown(object sender, EventArgs e)
-        {
-            this.trd = new Thread(new ThreadStart(this.ThreadTask));
-            this.trd.IsBackground = true;
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing && (this.components != null))
-            {
-                this.components.Dispose();
-            }
-            base.Dispose(disposing);
-        }
-
-        ~CaptureInfo()
-        {
-        }
-
-        private void InitializeComponent()
-        {
-            base.SuspendLayout();
-            base.AutoScaleDimensions = new SizeF(6f, 12f);
-            base.AutoScaleMode = AutoScaleMode.Font;
-            this.BackColor = Color.Black;
-            base.ClientSize = new Size(110, 0x83);
-            base.ControlBox = false;
-            this.DoubleBuffered = true;
-            base.FormBorderStyle = FormBorderStyle.None;
-            base.Location = new Point(100, 200);
-            base.MaximizeBox = false;
-            base.MinimizeBox = false;
-            base.Name = "CaptureInfo";
-            base.ShowIcon = false;
-            base.ShowInTaskbar = false;
-            base.StartPosition = FormStartPosition.Manual;
-            this.Text = "info";
-            base.TopMost = true;
-            base.Load += new EventHandler(this.CaptureInfo_Load);
-            base.MouseUp += new MouseEventHandler(this.CaptureInfo_MouseUp);
-            base.Paint += new PaintEventHandler(this.CaptureInfo_Paint);
-            base.Shown += new EventHandler(this.CaptureInfo_Shown);
-            base.MouseDown += new MouseEventHandler(this.CaptureInfo_MouseDown);
-            base.FormClosing += new FormClosingEventHandler(this.CaptureInfo_FormClosing);
-            base.MouseMove += new MouseEventHandler(this.CaptureInfo_MouseMove);
-            base.ResumeLayout(false);
-        }
-
-        protected override void OnClosing(CancelEventArgs e)
-        {
-            if (this.baseImage != null)
-            {
-                this.baseImage.Dispose();
-            }
-            this.baseImage = null;
-            base.OnClosing(e);
-        }
-
+        // Token: 0x06000570 RID: 1392 RVA: 0x00025F30 File Offset: 0x00024130
         protected override void OnPaintBackground(PaintEventArgs e)
         {
         }
 
-        private void RefreshInfo()
+        // Token: 0x06000571 RID: 1393 RVA: 0x00025F32 File Offset: 0x00024132
+        private void CaptureInfo_MouseDown(object sender, MouseEventArgs e)
         {
-            this.Refresh();
+            ptStart = new Point(e.X, e.Y);
+            isActive = true;
+            base.Opacity = 0.5;
+            Refresh();
         }
 
+        // Token: 0x06000572 RID: 1394 RVA: 0x00025F67 File Offset: 0x00024167
+        private void CaptureInfo_MouseUp(object sender, MouseEventArgs e)
+        {
+            isActive = false;
+            base.Opacity = 1.0;
+            Refresh();
+        }
+
+        // Token: 0x06000573 RID: 1395 RVA: 0x00025F88 File Offset: 0x00024188
+        private void CaptureInfo_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (isActive)
+            {
+                base.Left += e.X - ptStart.X;
+                base.Top += e.Y - ptStart.Y;
+                Refresh();
+            }
+        }
+
+        // Token: 0x06000574 RID: 1396 RVA: 0x00025FE1 File Offset: 0x000241E1
+        private void timRefresh_Tick(object sender, EventArgs e)
+        {
+            Refresh();
+        }
+
+        // Token: 0x06000575 RID: 1397 RVA: 0x00025FE9 File Offset: 0x000241E9
+        private void CaptureInfo_Load(object sender, EventArgs e)
+        {
+        }
+
+        // Token: 0x06000576 RID: 1398 RVA: 0x00025FEB File Offset: 0x000241EB
         private void ThreadTask()
         {
-            while (true)
+            for (; ; )
             {
-                base.Invoke(new RefreshDelegate(this.RefreshInfo));
+                base.Invoke(new CaptureInfo.RefreshDelegate(RefreshInfo));
                 Thread.Sleep(100);
             }
         }
 
-        private void timRefresh_Tick(object sender, EventArgs e)
+        // Token: 0x06000577 RID: 1399 RVA: 0x00026008 File Offset: 0x00024208
+        private void RefreshInfo()
         {
-            this.Refresh();
+            Refresh();
         }
 
-        public System.Drawing.Image Image
+        // Token: 0x06000578 RID: 1400 RVA: 0x00026010 File Offset: 0x00024210
+        private void CaptureInfo_FormClosing(object sender, FormClosingEventArgs e)
         {
-            set
+            if (trd != null)
             {
-                this.baseImage = (System.Drawing.Image) value.Clone();
+                trd.Abort();
             }
         }
 
-        public bool IsSelecting
+        // Token: 0x06000579 RID: 1401 RVA: 0x00026025 File Offset: 0x00024225
+        private void CaptureInfo_Shown(object sender, EventArgs e)
         {
-            get{return  
-                this._isDrag;}
-            set
+            trd = new Thread(new ThreadStart(ThreadTask))
             {
-                this._isDrag = value;
-            }
+                IsBackground = true
+            };
         }
 
-        public Color MouseColor
-        {
-            get{return  
-                this.colMouse;}
-            set
-            {
-                this.colMouse = value;
-            }
-        }
+        // Token: 0x0400036B RID: 875
+        private Image baseImage;
 
-        public Point MouseLocation
-        {
-            get{return  
-                this.ptMouse;}
-            set
-            {
-                this.ptMouse = value;
-            }
-        }
+        // Token: 0x0400036C RID: 876
+        private bool isActive;
 
-        public Point StartPoint
-        {
-            get{return  
-                this.ptStart;}
-            set
-            {
-                this.ptStart = value;
-            }
-        }
+        // Token: 0x0400036D RID: 877
+        private Point ptStart;
 
+        // Token: 0x0400036E RID: 878
+        private Point ptMouse;
+
+        // Token: 0x0400036F RID: 879
+        private Color colMouse;
+
+        // Token: 0x04000370 RID: 880
+        private bool _isDrag;
+
+        // Token: 0x04000371 RID: 881
+        private Thread trd;
+
+        // Token: 0x020000A8 RID: 168
+        // (Invoke) Token: 0x0600057D RID: 1405
         private delegate void RefreshDelegate();
     }
 }
-

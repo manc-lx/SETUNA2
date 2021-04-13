@@ -1,48 +1,52 @@
-﻿namespace SETUNA.Main
-{
-    using SETUNA.Main.StyleItems;
-    using System;
-    using System.Drawing;
+﻿using System.Drawing;
+using SETUNA.Main.StyleItems;
 
+namespace SETUNA.Main
+{
+    // Token: 0x020000AB RID: 171
     internal class StyleItemEditListBox : SetunaListBox
     {
+        // Token: 0x06000584 RID: 1412 RVA: 0x000261CC File Offset: 0x000243CC
         protected override void DrawItemString(Graphics g, object item, Font font, Brush brush, Rectangle bounds, StringFormat sf, int index)
         {
-            if (index >= 0)
+            if (index < 0)
             {
-                string nameAndState;
-                if (!base.DesignMode)
-                {
-                    CStyleItem item2 = (CStyleItem) item;
-                    nameAndState = item2.NameAndState;
-                    item2.GetDescription();
-                }
-                else
-                {
-                    nameAndState = item.ToString();
-                    item.ToString();
-                }
-                int terminate = this.GetTerminate();
-                if ((index > terminate) && (terminate >= 0))
-                {
-                    brush = Brushes.Gray;
-                }
-                base.DrawItemString(g, nameAndState, font, brush, bounds, sf, index);
+                return;
             }
+            string item2;
+            if (!base.DesignMode)
+            {
+                var cstyleItem = (CStyleItem)item;
+                item2 = cstyleItem.NameAndState;
+                cstyleItem.GetDescription();
+            }
+            else
+            {
+                item2 = item.ToString();
+                item.ToString();
+            }
+            var terminate = GetTerminate();
+            if (index > terminate && terminate >= 0)
+            {
+                brush = Brushes.Gray;
+            }
+            base.DrawItemString(g, item2, font, brush, bounds, sf, index);
         }
 
+        // Token: 0x06000585 RID: 1413 RVA: 0x00026234 File Offset: 0x00024434
         protected int GetTerminate()
         {
-            for (int i = 0; i < base.Items.Count; i++)
+            var result = -1;
+            for (var i = 0; i < base.Items.Count; i++)
             {
-                CStyleItem item = (CStyleItem) base.Items[i];
-                if (item.IsTerminate)
+                var cstyleItem = (CStyleItem)base.Items[i];
+                if (cstyleItem.IsTerminate)
                 {
-                    return i;
+                    result = i;
+                    break;
                 }
             }
-            return -1;
+            return result;
         }
     }
 }
-

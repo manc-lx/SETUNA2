@@ -1,54 +1,82 @@
-﻿namespace SETUNA.Resources
-{
-    using System;
-    using System.CodeDom.Compiler;
-    using System.ComponentModel;
-    using System.Diagnostics;
-    using System.Drawing;
-    using System.Globalization;
-    using System.Resources;
-    using System.Runtime.CompilerServices;
+﻿using System.CodeDom.Compiler;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Drawing;
+using System.Globalization;
+using System.Resources;
+using System.Runtime.CompilerServices;
 
-    [CompilerGenerated, GeneratedCode("System.Resources.Tools.StronglyTypedResourceBuilder", "2.0.0.0"), DebuggerNonUserCode]
+namespace SETUNA.Resources
+{
+    // Token: 0x02000006 RID: 6
+    [CompilerGenerated]
+    [GeneratedCode("System.Resources.Tools.StronglyTypedResourceBuilder", "2.0.0.0")]
+    [DebuggerNonUserCode]
     internal class Image
     {
-        private static CultureInfo resourceCulture;
-        private static System.Resources.ResourceManager resourceMan;
-
+        // Token: 0x06000020 RID: 32 RVA: 0x000032FC File Offset: 0x000014FC
         internal Image()
         {
         }
 
-        internal static Bitmap Crypt =>
-            ((Bitmap) ResourceManager.GetObject("Crypt", resourceCulture));
-
+        // Token: 0x17000003 RID: 3
+        // (get) Token: 0x06000021 RID: 33 RVA: 0x00003304 File Offset: 0x00001504
         [EditorBrowsable(EditorBrowsableState.Advanced)]
-        internal static CultureInfo Culture
-        {
-            get{return  
-                resourceCulture;}
-            set
-            {
-                resourceCulture = value;
-            }
-        }
-
-        [EditorBrowsable(EditorBrowsableState.Advanced)]
-        internal static System.Resources.ResourceManager ResourceManager
+        internal static ResourceManager ResourceManager
         {
             get
             {
-                if (object.ReferenceEquals(resourceMan, null))
+                if (object.ReferenceEquals(Image.resourceMan, null))
                 {
-                    System.Resources.ResourceManager manager = new System.Resources.ResourceManager("SETUNA.Resources.Image", typeof(SETUNA.Resources.Image).Assembly);
-                    resourceMan = manager;
+                    ResourceManager resourceManager = new ResourceManager("SETUNA.Resources.Image", typeof(Image).Assembly);
+                    Image.resourceMan = resourceManager;
                 }
-                return resourceMan;
+                return Image.resourceMan;
             }
         }
 
-        internal static Bitmap SampleImage =>
-            ((Bitmap) ResourceManager.GetObject("SampleImage", resourceCulture));
+        // Token: 0x17000004 RID: 4
+        // (get) Token: 0x06000022 RID: 34 RVA: 0x00003343 File Offset: 0x00001543
+        // (set) Token: 0x06000023 RID: 35 RVA: 0x0000334A File Offset: 0x0000154A
+        [EditorBrowsable(EditorBrowsableState.Advanced)]
+        internal static CultureInfo Culture
+        {
+            get
+            {
+                return Image.resourceCulture;
+            }
+            set
+            {
+                Image.resourceCulture = value;
+            }
+        }
+
+        // Token: 0x17000005 RID: 5
+        // (get) Token: 0x06000024 RID: 36 RVA: 0x00003354 File Offset: 0x00001554
+        internal static Bitmap Crypt
+        {
+            get
+            {
+                object @object = Image.ResourceManager.GetObject("Crypt", Image.resourceCulture);
+                return (Bitmap)@object;
+            }
+        }
+
+        // Token: 0x17000006 RID: 6
+        // (get) Token: 0x06000025 RID: 37 RVA: 0x0000337C File Offset: 0x0000157C
+        internal static Bitmap SampleImage
+        {
+            get
+            {
+                object @object = Image.ResourceManager.GetObject("SampleImage", Image.resourceCulture);
+                return (Bitmap)@object;
+            }
+        }
+
+        // Token: 0x0400001E RID: 30
+        private static ResourceManager resourceMan;
+
+        // Token: 0x0400001F RID: 31
+        private static CultureInfo resourceCulture;
     }
 }
-

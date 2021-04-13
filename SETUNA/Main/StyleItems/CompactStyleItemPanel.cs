@@ -1,309 +1,194 @@
-﻿namespace SETUNA.Main.StyleItems
+﻿using System;
+using System.Drawing;
+using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
+using System.Windows.Forms;
+
+namespace SETUNA.Main.StyleItems
 {
-    using SETUNA.Resources;
-    using System;
-    using System.ComponentModel;
-    using System.Drawing;
-    using System.Drawing.Drawing2D;
-    using System.Drawing.Imaging;
-    using System.Windows.Forms;
-
-    internal class CompactStyleItemPanel : ToolBoxForm
+    // Token: 0x0200007A RID: 122
+    internal partial class CompactStyleItemPanel : ToolBoxForm
     {
-        private TrackBar barOpacity;
-        private ColorMatrix cm;
-        private ColorDialog colorDialog1;
-        private GroupBox groupBox1;
-        private GroupBox groupBox2;
-        private ImageAttributes ia;
-        private System.Drawing.Image imgBackground;
-        private System.Drawing.Image imgScrap;
-        private Label label1;
-        private Label label2;
-        private Label label3;
-        private NumericUpDown numOpacity;
-        private PictureBox picLineColor;
-        private PictureBox picPreview;
-        private RadioButton rdoDashed;
-        private RadioButton rdoSolid;
-
+        // Token: 0x060003F9 RID: 1017 RVA: 0x00019836 File Offset: 0x00017A36
         public CompactStyleItemPanel()
         {
         }
 
+        // Token: 0x060003FA RID: 1018 RVA: 0x0001983E File Offset: 0x00017A3E
         public CompactStyleItemPanel(CCompactStyleItem item) : base(item)
         {
         }
 
-        private void barOpacity_Scroll(object sender, EventArgs e)
+        // Token: 0x060003FB RID: 1019 RVA: 0x00019848 File Offset: 0x00017A48
+        protected override void SetStyleToForm(object style)
         {
-            this.numOpacity.Value = this.barOpacity.Value;
-        }
-
-        private void barOpacity_ValueChanged(object sender, EventArgs e)
-        {
-            this.numPreview_ValueChanged();
-        }
-
-        protected override object GetStyleFromForm() => 
-            new CCompactStyleItem { 
-                Opacity = (byte) this.numOpacity.Value,
-                LineColor = this.picLineColor.BackColor.ToArgb(),
-                SoldLine = this.rdoSolid.Checked
+            var ccompactStyleItem = (CCompactStyleItem)style;
+            InitializeComponent();
+            Text = ccompactStyleItem.GetDisplayName();
+            numOpacity.Minimum = CCompactStyleItem.OpacityMinValue;
+            numOpacity.Maximum = CCompactStyleItem.OpacityMaxValue;
+            numOpacity.Value = ccompactStyleItem.Opacity;
+            barOpacity.Minimum = CCompactStyleItem.OpacityMinValue;
+            barOpacity.Maximum = CCompactStyleItem.OpacityMaxValue;
+            barOpacity.Value = ccompactStyleItem.Opacity;
+            picLineColor.BackColor = Color.FromArgb(ccompactStyleItem.LineColor);
+            rdoSolid.Checked = ccompactStyleItem.SoldLine;
+            rdoDashed.Checked = !ccompactStyleItem.SoldLine;
+            cm = new ColorMatrix
+            {
+                Matrix00 = 1f,
+                Matrix11 = 1f,
+                Matrix22 = 1f,
+                Matrix33 = (float)(numOpacity.Value / 100m),
+                Matrix44 = 1f
             };
-
-        private void InitializeComponent()
-        {
-            this.groupBox1 = new GroupBox();
-            this.rdoDashed = new RadioButton();
-            this.rdoSolid = new RadioButton();
-            this.picLineColor = new PictureBox();
-            this.label3 = new Label();
-            this.groupBox2 = new GroupBox();
-            this.picPreview = new PictureBox();
-            this.barOpacity = new TrackBar();
-            this.label2 = new Label();
-            this.label1 = new Label();
-            this.numOpacity = new NumericUpDown();
-            this.colorDialog1 = new ColorDialog();
-            this.groupBox1.SuspendLayout();
-            ((ISupportInitialize) this.picLineColor).BeginInit();
-            this.groupBox2.SuspendLayout();
-            ((ISupportInitialize) this.picPreview).BeginInit();
-            this.barOpacity.BeginInit();
-            this.numOpacity.BeginInit();
-            base.SuspendLayout();
-            base.cmdOK.Location = new Point(0xed, 0xb1);
-            base.cmdCancel.Anchor = AnchorStyles.Right | AnchorStyles.Bottom;
-            base.cmdCancel.Location = new Point(0x137, 0xb1);
-            this.groupBox1.Controls.Add(this.rdoDashed);
-            this.groupBox1.Controls.Add(this.rdoSolid);
-            this.groupBox1.Controls.Add(this.picLineColor);
-            this.groupBox1.Controls.Add(this.label3);
-            this.groupBox1.Controls.Add(this.groupBox2);
-            this.groupBox1.Controls.Add(this.barOpacity);
-            this.groupBox1.Controls.Add(this.label2);
-            this.groupBox1.Controls.Add(this.label1);
-            this.groupBox1.Controls.Add(this.numOpacity);
-            this.groupBox1.Location = new Point(8, 8);
-            this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new Size(0x175, 0xa4);
-            this.groupBox1.TabIndex = 0;
-            this.groupBox1.TabStop = false;
-            this.groupBox1.Text = "设置";
-            this.rdoDashed.AutoSize = true;
-            this.rdoDashed.Location = new Point(0x9d, 100);
-            this.rdoDashed.Name = "rdoDashed";
-            this.rdoDashed.Size = new Size(0x2f, 0x10);
-            this.rdoDashed.TabIndex = 14;
-            this.rdoDashed.TabStop = true;
-            this.rdoDashed.Text = "虚线";
-            this.rdoDashed.UseVisualStyleBackColor = true;
-            this.rdoSolid.AutoSize = true;
-            this.rdoSolid.Location = new Point(0x68, 100);
-            this.rdoSolid.Name = "rdoSolid";
-            this.rdoSolid.Size = new Size(0x2f, 0x10);
-            this.rdoSolid.TabIndex = 13;
-            this.rdoSolid.TabStop = true;
-            this.rdoSolid.Text = "实线";
-            this.rdoSolid.UseVisualStyleBackColor = true;
-            this.rdoSolid.CheckedChanged += new EventHandler(this.rdoSolid_CheckedChanged);
-            this.picLineColor.BorderStyle = BorderStyle.Fixed3D;
-            this.picLineColor.Cursor = Cursors.Hand;
-            this.picLineColor.Location = new Point(0x3e, 0x62);
-            this.picLineColor.Name = "picLineColor";
-            this.picLineColor.Size = new Size(0x20, 0x13);
-            this.picLineColor.TabIndex = 12;
-            this.picLineColor.TabStop = false;
-            this.picLineColor.Click += new EventHandler(this.picLineColor_Click);
-            this.label3.AutoSize = true;
-            this.label3.Location = new Point(0x19, 0x66);
-            this.label3.Name = "label3";
-            this.label3.Size = new Size(0x1f, 12);
-            this.label3.TabIndex = 10;
-            this.label3.Text = "边框：";
-            this.groupBox2.Controls.Add(this.picPreview);
-            this.groupBox2.Location = new Point(0xe2, 0x12);
-            this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new Size(0x8a, 0x8a);
-            this.groupBox2.TabIndex = 9;
-            this.groupBox2.TabStop = false;
-            this.groupBox2.Text = "预览";
-            this.picPreview.BorderStyle = BorderStyle.Fixed3D;
-            this.picPreview.Location = new Point(6, 0x12);
-            this.picPreview.Name = "picPreview";
-            this.picPreview.Size = new Size(0x7e, 0x72);
-            this.picPreview.TabIndex = 0;
-            this.picPreview.TabStop = false;
-            this.picPreview.Paint += new PaintEventHandler(this.picPreview_Paint);
-            this.barOpacity.AutoSize = false;
-            this.barOpacity.Location = new Point(0x30, 50);
-            this.barOpacity.Maximum = 100;
-            this.barOpacity.Minimum = 1;
-            this.barOpacity.Name = "barOpacity";
-            this.barOpacity.Size = new Size(0x5b, 20);
-            this.barOpacity.TabIndex = 2;
-            this.barOpacity.TickFrequency = 10;
-            this.barOpacity.Value = 1;
-            this.barOpacity.ValueChanged += new EventHandler(this.barOpacity_ValueChanged);
-            this.barOpacity.Scroll += new EventHandler(this.barOpacity_Scroll);
-            this.label2.AutoSize = true;
-            this.label2.Location = new Point(0xc7, 50);
-            this.label2.Name = "label2";
-            this.label2.Size = new Size(11, 12);
-            this.label2.TabIndex = 4;
-            this.label2.Text = "%";
-            this.label1.AutoSize = true;
-            this.label1.Location = new Point(0x19, 0x1f);
-            this.label1.Name = "label1";
-            this.label1.Size = new Size(0x37, 12);
-            this.label1.TabIndex = 0;
-            this.label1.Text = "不透明度：";
-            this.numOpacity.ImeMode = ImeMode.Off;
-            this.numOpacity.Location = new Point(0x91, 0x30);
-            this.numOpacity.Name = "numOpacity";
-            this.numOpacity.Size = new Size(0x30, 0x13);
-            this.numOpacity.TabIndex = 3;
-            this.numOpacity.ValueChanged += new EventHandler(this.numOpacity_ValueChanged);
-            this.numOpacity.Enter += new EventHandler(this.numOpacity_Enter);
-            base.AutoScaleDimensions = new SizeF(6f, 12f);
-            base.ClientSize = new Size(0x185, 0xd1);
-            base.Controls.Add(this.groupBox1);
-            this.DoubleBuffered = true;
-            base.Name = "CompactStyleItemPanel";
-            base.FormClosed += new FormClosedEventHandler(this.OpacityStyleItemPanel_FormClosed);
-            base.Controls.SetChildIndex(base.cmdCancel, 0);
-            base.Controls.SetChildIndex(base.cmdOK, 0);
-            base.Controls.SetChildIndex(this.groupBox1, 0);
-            this.groupBox1.ResumeLayout(false);
-            this.groupBox1.PerformLayout();
-            ((ISupportInitialize) this.picLineColor).EndInit();
-            this.groupBox2.ResumeLayout(false);
-            ((ISupportInitialize) this.picPreview).EndInit();
-            this.barOpacity.EndInit();
-            this.numOpacity.EndInit();
-            base.ResumeLayout(false);
+            ia = new ImageAttributes();
+            ia.SetColorMatrix(cm);
+            imgBackground = new Bitmap(picPreview.Width, picPreview.Height, PixelFormat.Format24bppRgb);
+            using (var graphics = Graphics.FromImage(imgBackground))
+            {
+                graphics.CopyFromScreen(new Point(0, 0), new Point(0, 0), imgBackground.Size);
+            }
+            imgScrap = new Bitmap(50, 50, PixelFormat.Format24bppRgb);
+            using (var graphics2 = Graphics.FromImage(imgScrap))
+            {
+                graphics2.DrawImageUnscaled(SETUNA.Resources.Image.SampleImage, imgScrap.Width / 2 - SETUNA.Resources.Image.SampleImage.Width / 2, imgScrap.Height / 2 - SETUNA.Resources.Image.SampleImage.Height / 2);
+            }
+            UpdateLine();
         }
 
+        // Token: 0x060003FC RID: 1020 RVA: 0x00019A94 File Offset: 0x00017C94
+        protected override object GetStyleFromForm()
+        {
+            return new CCompactStyleItem
+            {
+                Opacity = (byte)numOpacity.Value,
+                LineColor = picLineColor.BackColor.ToArgb(),
+                SoldLine = rdoSolid.Checked
+            };
+        }
+
+        // Token: 0x060003FD RID: 1021 RVA: 0x00019AE8 File Offset: 0x00017CE8
         private void numOpacity_Enter(object sender, EventArgs e)
         {
-            NumericUpDown down = (NumericUpDown) sender;
-            down.Select(0, down.Value.ToString().Length);
+            var numericUpDown = (NumericUpDown)sender;
+            numericUpDown.Select(0, numericUpDown.Value.ToString().Length);
         }
 
+        // Token: 0x060003FE RID: 1022 RVA: 0x00019B16 File Offset: 0x00017D16
+        private void barOpacity_Scroll(object sender, EventArgs e)
+        {
+            numOpacity.Value = barOpacity.Value;
+        }
+
+        // Token: 0x060003FF RID: 1023 RVA: 0x00019B33 File Offset: 0x00017D33
         private void numOpacity_ValueChanged(object sender, EventArgs e)
         {
-            if (this.barOpacity.Value != ((int) this.numOpacity.Value))
+            if (barOpacity.Value != (int)numOpacity.Value)
             {
-                this.barOpacity.Value = (int) this.numOpacity.Value;
+                barOpacity.Value = (int)numOpacity.Value;
             }
         }
 
-        private void numPreview_ValueChanged()
+        // Token: 0x06000400 RID: 1024 RVA: 0x00019B70 File Offset: 0x00017D70
+        private void picPreview_Paint(object sender, PaintEventArgs e)
         {
-            if ((this.cm != null) && (this.ia != null))
+            if (imgBackground != null)
             {
-                this.cm.Matrix33 = (float) (this.numOpacity.Value / 100M);
-                this.ia.SetColorMatrix(this.cm);
+                e.Graphics.DrawImageUnscaled(imgBackground, new Point(0, 0));
             }
-            this.Refresh();
+            if (imgScrap != null)
+            {
+                e.Graphics.DrawImage(imgScrap, new Rectangle((imgBackground.Width - imgScrap.Width) / 2, (imgBackground.Height - imgScrap.Height) / 2, imgScrap.Width, imgScrap.Height), 0, 0, imgScrap.Width, imgScrap.Height, GraphicsUnit.Pixel, ia);
+            }
         }
 
+        // Token: 0x06000401 RID: 1025 RVA: 0x00019C22 File Offset: 0x00017E22
         private void OpacityStyleItemPanel_FormClosed(object sender, FormClosedEventArgs e)
         {
-            if (this.imgBackground != null)
+            if (imgBackground != null)
             {
-                this.imgBackground.Dispose();
-                this.imgBackground = null;
-                if (this.imgScrap != null)
+                imgBackground.Dispose();
+                imgBackground = null;
+                if (imgScrap != null)
                 {
-                    this.imgScrap.Dispose();
-                    this.imgScrap = null;
+                    imgScrap.Dispose();
+                    imgScrap = null;
                 }
                 GC.Collect();
             }
         }
 
+        // Token: 0x06000402 RID: 1026 RVA: 0x00019C60 File Offset: 0x00017E60
+        private void numPreview_ValueChanged()
+        {
+            if (cm != null && ia != null)
+            {
+                cm.Matrix33 = (float)(numOpacity.Value / 100m);
+                ia.SetColorMatrix(cm);
+            }
+            Refresh();
+        }
+
+        // Token: 0x06000403 RID: 1027 RVA: 0x00019CBC File Offset: 0x00017EBC
         private void picLineColor_Click(object sender, EventArgs e)
         {
-            this.colorDialog1.Color = this.picLineColor.BackColor;
-            if (this.colorDialog1.ShowDialog() == DialogResult.OK)
+            colorDialog1.Color = picLineColor.BackColor;
+            var dialogResult = colorDialog1.ShowDialog();
+            if (dialogResult == DialogResult.OK)
             {
-                this.picLineColor.BackColor = this.colorDialog1.Color;
+                picLineColor.BackColor = colorDialog1.Color;
             }
-            this.UpdateLine();
+            UpdateLine();
         }
 
-        private void picPreview_Paint(object sender, PaintEventArgs e)
+        // Token: 0x06000404 RID: 1028 RVA: 0x00019D0B File Offset: 0x00017F0B
+        private void barOpacity_ValueChanged(object sender, EventArgs e)
         {
-            if (this.imgBackground != null)
-            {
-                e.Graphics.DrawImageUnscaled(this.imgBackground, new Point(0, 0));
-            }
-            if (this.imgScrap != null)
-            {
-                e.Graphics.DrawImage(this.imgScrap, new Rectangle((this.imgBackground.Width - this.imgScrap.Width) / 2, (this.imgBackground.Height - this.imgScrap.Height) / 2, this.imgScrap.Width, this.imgScrap.Height), 0, 0, this.imgScrap.Width, this.imgScrap.Height, GraphicsUnit.Pixel, this.ia);
-            }
+            numPreview_ValueChanged();
         }
 
-        private void rdoSolid_CheckedChanged(object sender, EventArgs e)
-        {
-            this.UpdateLine();
-        }
-
-        protected override void SetStyleToForm(object style)
-        {
-            CCompactStyleItem item = (CCompactStyleItem) style;
-            this.InitializeComponent();
-            this.Text = item.GetDisplayName();
-            this.numOpacity.Minimum = CCompactStyleItem.OpacityMinValue;
-            this.numOpacity.Maximum = CCompactStyleItem.OpacityMaxValue;
-            this.numOpacity.Value = item.Opacity;
-            this.barOpacity.Minimum = CCompactStyleItem.OpacityMinValue;
-            this.barOpacity.Maximum = CCompactStyleItem.OpacityMaxValue;
-            this.barOpacity.Value = item.Opacity;
-            this.picLineColor.BackColor = Color.FromArgb(item.LineColor);
-            this.rdoSolid.Checked = item.SoldLine;
-            this.rdoDashed.Checked = !item.SoldLine;
-            this.cm = new ColorMatrix();
-            this.cm.Matrix00 = 1f;
-            this.cm.Matrix11 = 1f;
-            this.cm.Matrix22 = 1f;
-            this.cm.Matrix33 = (float) (this.numOpacity.Value / 100M);
-            this.cm.Matrix44 = 1f;
-            this.ia = new ImageAttributes();
-            this.ia.SetColorMatrix(this.cm);
-            this.imgBackground = new Bitmap(this.picPreview.Width, this.picPreview.Height, PixelFormat.Format24bppRgb);
-            using (Graphics graphics = Graphics.FromImage(this.imgBackground))
-            {
-                graphics.CopyFromScreen(new Point(0, 0), new Point(0, 0), this.imgBackground.Size);
-            }
-            this.imgScrap = new Bitmap(50, 50, PixelFormat.Format24bppRgb);
-            using (Graphics graphics2 = Graphics.FromImage(this.imgScrap))
-            {
-                graphics2.DrawImageUnscaled(SETUNA.Resources.Image.SampleImage, (this.imgScrap.Width / 2) - (SETUNA.Resources.Image.SampleImage.Width / 2), (this.imgScrap.Height / 2) - (SETUNA.Resources.Image.SampleImage.Height / 2));
-            }
-            this.UpdateLine();
-        }
-
+        // Token: 0x06000405 RID: 1029 RVA: 0x00019D14 File Offset: 0x00017F14
         private void UpdateLine()
         {
-            if (this.imgScrap != null)
+            if (imgScrap == null)
             {
-                using (Graphics graphics = Graphics.FromImage(this.imgScrap))
-                {
-                    Pen pen = new Pen(this.picLineColor.BackColor);
-                    if (this.rdoDashed.Checked)
-                    {
-                        pen.DashStyle = DashStyle.Dash;
-                        pen.DashPattern = new float[] { 4f, 4f };
-                    }
-                    graphics.DrawRectangle(new Pen(Color.White), 0, 0, this.imgScrap.Width - 1, this.imgScrap.Height - 1);
-                    graphics.DrawRectangle(pen, 0, 0, this.imgScrap.Width - 1, this.imgScrap.Height - 1);
-                }
-                this.picPreview.Refresh();
+                return;
             }
+            using (var graphics = Graphics.FromImage(imgScrap))
+            {
+                var pen = new Pen(picLineColor.BackColor);
+                if (rdoDashed.Checked)
+                {
+                    pen.DashStyle = DashStyle.Dash;
+                    pen.DashPattern = new float[]
+                    {
+                        4f,
+                        4f
+                    };
+                }
+                graphics.DrawRectangle(new Pen(Color.White), 0, 0, imgScrap.Width - 1, imgScrap.Height - 1);
+                graphics.DrawRectangle(pen, 0, 0, imgScrap.Width - 1, imgScrap.Height - 1);
+            }
+            picPreview.Refresh();
         }
+
+        // Token: 0x06000406 RID: 1030 RVA: 0x00019DF0 File Offset: 0x00017FF0
+        private void rdoSolid_CheckedChanged(object sender, EventArgs e)
+        {
+            UpdateLine();
+        }
+
+        // Token: 0x04000260 RID: 608
+        private System.Drawing.Image imgBackground;
+
+        // Token: 0x04000261 RID: 609
+        private System.Drawing.Image imgScrap;
+
+        // Token: 0x04000262 RID: 610
+        private ImageAttributes ia;
+
+        // Token: 0x04000268 RID: 616
+        private ColorMatrix cm;
     }
 }
-

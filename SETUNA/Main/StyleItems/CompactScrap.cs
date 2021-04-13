@@ -1,181 +1,192 @@
-﻿namespace SETUNA.Main.StyleItems
+﻿using System;
+using System.Drawing;
+using System.Drawing.Drawing2D;
+using System.Windows.Forms;
+
+namespace SETUNA.Main.StyleItems
 {
-    using SETUNA.Main;
-    using System;
-    using System.ComponentModel;
-    using System.Drawing;
-    using System.Drawing.Drawing2D;
-    using System.Windows.Forms;
-
-    public class CompactScrap : Form
+    // Token: 0x0200007B RID: 123
+    public partial class CompactScrap : BaseForm
     {
-        private Point _clickpoint;
-        private bool _dragmode;
-        private Point _dragpoint;
-        private Pen _pen;
-        private ScrapBase _scrap;
-        private Image _thumbnail;
-        private IContainer components;
-
+        // Token: 0x06000407 RID: 1031 RVA: 0x00019DF8 File Offset: 0x00017FF8
         public CompactScrap(ScrapBase scrap, CCompactStyleItem item, Point clickpoint)
         {
-            this.InitializeComponent();
-            this._scrap = scrap;
-            this._thumbnail = scrap.GetViewImage();
-            this._dragmode = false;
+            InitializeComponent();
+            this.scrap = scrap;
+            _thumbnail = scrap.GetViewImage();
+            _dragmode = false;
             if (clickpoint == Point.Empty)
             {
-                this._clickpoint = new Point(base.Width / 2, base.Height / 2);
+                _clickpoint = new Point(base.Width / 2, base.Height / 2);
             }
             else
             {
-                this._clickpoint = clickpoint;
+                _clickpoint = clickpoint;
             }
-            this._pen = new Pen(Color.FromArgb(item.LineColor), 1f);
+            _pen = new Pen(Color.FromArgb(item.LineColor), 1f);
             if (!item.SoldLine)
             {
-                this._pen.DashStyle = DashStyle.Dash;
-                this._pen.DashPattern = new float[] { 4f, 4f };
+                _pen.DashStyle = DashStyle.Dash;
+                _pen.DashPattern = new float[]
+                {
+                    4f,
+                    4f
+                };
             }
             else
             {
-                this._pen.DashStyle = DashStyle.Solid;
+                _pen.DashStyle = DashStyle.Solid;
             }
             if (item.LineColor == Color.Fuchsia.ToArgb())
             {
-                this.BackColor = Color.Magenta;
+                BackColor = Color.Magenta;
                 base.TransparencyKey = Color.Magenta;
             }
-            base.Opacity = ((double) item.Opacity) / 100.0;
+            base.Opacity = item.Opacity / 100.0;
         }
 
+        // Token: 0x06000408 RID: 1032 RVA: 0x00019F00 File Offset: 0x00018100
+        private void CompactScrap_Load(object sender, EventArgs e)
+        {
+            if (scrap != null)
+            {
+                //if (scrap.Visible)
+                {
+                    scrap.Visible = false;
+                    scrap.StyleForm = this;
+                }
+                ConvertScrapPosToCompact();
+            }
+        }
+
+        // Token: 0x06000409 RID: 1033 RVA: 0x00019F80 File Offset: 0x00018180
+        private void CompactScrap_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            if (scrap != null)
+            {
+                //if (!scrap.Visible)
+                {
+                    scrap.Visible = true;
+                    scrap.StyleForm = null;
+                    scrap.RemoveStyle(typeof(CCompactStyleItem));
+                }
+                ConvertCompactPosToScrap();
+            }
+        }
+
+        // Token: 0x0600040A RID: 1034 RVA: 0x00019FFE File Offset: 0x000181FE
         private void CompactScrap_DoubleClick(object sender, EventArgs e)
         {
-            this._thumbnail.Dispose();
+            _thumbnail.Dispose();
             base.Close();
         }
 
-        private void CompactScrap_FormClosed(object sender, FormClosedEventArgs e)
+        // Token: 0x0600040B RID: 1035 RVA: 0x0001A014 File Offset: 0x00018214
+        protected override void OnPaint(PaintEventArgs e)
         {
-            if (this._scrap != null)
+            e.Graphics.Clear(Color.Green);
+            TransparencyKey = Color.Green;
+
+            e.Graphics.DrawImageUnscaled(_thumbnail, new Point(-_clickpoint.X + base.Width / 2, -_clickpoint.Y + base.Height / 2));
+            e.Graphics.DrawRectangle(Pens.White, new Rectangle(0, 0, base.Width - 1, base.Height - 1));
+            e.Graphics.DrawRectangle(_pen, new Rectangle(0, 0, base.Width - 1, base.Height - 1));
+        }
+
+        // Token: 0x0600040C RID: 1036 RVA: 0x0001A0B0 File Offset: 0x000182B0
+        private void DragStart(Point pt)
+        {
+            _dragmode = true;
+            _dragpoint = pt;
+        }
+
+        // Token: 0x0600040D RID: 1037 RVA: 0x0001A0C0 File Offset: 0x000182C0
+        private void DragEnd()
+        {
+            _dragmode = false;
+        }
+
+        // Token: 0x0600040E RID: 1038 RVA: 0x0001A0CC File Offset: 0x000182CC
+        private void DragMove(Point pt)
+        {
+            if (_dragmode)
             {
-                int num = (base.Left + (base.Width / 2)) - this._clickpoint.X;
-                int num2 = (base.Top + (base.Height / 2)) - this._clickpoint.Y;
-                this._scrap.Left = num;
-                this._scrap.Top = num2;
-                if (!this._scrap.Visible)
+                base.Left += pt.X - _dragpoint.X;
+                base.Top += pt.Y - _dragpoint.Y;
+
+                if (scrap != null)
                 {
-                    this._scrap.Visible = true;
+                    ConvertCompactPosToScrap();
+                    scrap.fireScrapLocationChangedEvent();
                 }
             }
         }
 
+        // Token: 0x0600040F RID: 1039 RVA: 0x0001A121 File Offset: 0x00018321
+        private void CompactScrap_MouseDown(object sender, MouseEventArgs e)
+        {
+            DragStart(e.Location);
+        }
+
+        // Token: 0x06000410 RID: 1040 RVA: 0x0001A12F File Offset: 0x0001832F
+        private void CompactScrap_MouseUp(object sender, MouseEventArgs e)
+        {
+            DragEnd();
+        }
+
+        // Token: 0x06000411 RID: 1041 RVA: 0x0001A137 File Offset: 0x00018337
+        private void CompactScrap_MouseMove(object sender, MouseEventArgs e)
+        {
+            DragMove(e.Location);
+        }
+
+        // Token: 0x06000412 RID: 1042 RVA: 0x0001A145 File Offset: 0x00018345
+        private void CompactScrap_Leave(object sender, EventArgs e)
+        {
+            DragEnd();
+        }
+
+        // Token: 0x06000413 RID: 1043 RVA: 0x0001A14D File Offset: 0x0001834D
         private void CompactScrap_KeyDown(object sender, KeyEventArgs e)
         {
-            if (((e.KeyCode == Keys.Escape) || (e.KeyCode == Keys.Enter)) || (e.KeyCode == Keys.Enter))
+            if (e.KeyCode == Keys.Escape || e.KeyCode == Keys.Return || e.KeyCode == Keys.Return)
             {
                 base.Close();
             }
         }
 
-        private void CompactScrap_Leave(object sender, EventArgs e)
+        private void ConvertScrapPosToCompact()
         {
-            this.DragEnd();
+            var left = scrap.Left + _clickpoint.X - base.Width / 2;
+            var top = scrap.Top + _clickpoint.Y - base.Height / 2;
+            base.Left = left;
+            base.Top = top;
         }
 
-        private void CompactScrap_Load(object sender, EventArgs e)
+        private void ConvertCompactPosToScrap()
         {
-            if (this._scrap != null)
-            {
-                if (this._scrap.Visible)
-                {
-                    this._scrap.Visible = false;
-                }
-                int num = (this._scrap.Left + this._clickpoint.X) - (base.Width / 2);
-                int num2 = (this._scrap.Top + this._clickpoint.Y) - (base.Height / 2);
-                base.Left = num;
-                base.Top = num2;
-            }
+            var left = base.Left + base.Width / 2 - _clickpoint.X;
+            var top = base.Top + base.Height / 2 - _clickpoint.Y;
+            scrap.Left = left;
+            scrap.Top = top;
         }
 
-        private void CompactScrap_MouseDown(object sender, MouseEventArgs e)
-        {
-            this.DragStart(e.Location);
-        }
 
-        private void CompactScrap_MouseMove(object sender, MouseEventArgs e)
-        {
-            this.DragMove(e.Location);
-        }
+        // Token: 0x04000269 RID: 617
+        public ScrapBase scrap;
 
-        private void CompactScrap_MouseUp(object sender, MouseEventArgs e)
-        {
-            this.DragEnd();
-        }
+        // Token: 0x0400026A RID: 618
+        private Image _thumbnail;
 
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing && (this.components != null))
-            {
-                this.components.Dispose();
-            }
-            base.Dispose(disposing);
-        }
+        // Token: 0x0400026B RID: 619
+        private bool _dragmode;
 
-        private void DragEnd()
-        {
-            this._dragmode = false;
-        }
+        // Token: 0x0400026C RID: 620
+        private Point _dragpoint;
 
-        private void DragMove(Point pt)
-        {
-            if (this._dragmode)
-            {
-                base.Left += pt.X - this._dragpoint.X;
-                base.Top += pt.Y - this._dragpoint.Y;
-            }
-        }
+        // Token: 0x0400026D RID: 621
+        private Pen _pen;
 
-        private void DragStart(Point pt)
-        {
-            this._dragmode = true;
-            this._dragpoint = pt;
-        }
-
-        private void InitializeComponent()
-        {
-            base.SuspendLayout();
-            base.AutoScaleDimensions = new SizeF(6f, 12f);
-            base.AutoScaleMode = AutoScaleMode.Font;
-            this.BackColor = Color.Fuchsia;
-            base.ClientSize = new Size(50, 50);
-            base.ControlBox = false;
-            base.FormBorderStyle = FormBorderStyle.None;
-            this.MaximumSize = new Size(50, 50);
-            this.MinimumSize = new Size(50, 50);
-            base.Name = "CompactScrap";
-            base.ShowIcon = false;
-            base.ShowInTaskbar = false;
-            this.Text = "CompactScrap";
-            base.TopMost = true;
-            base.TransparencyKey = Color.Fuchsia;
-            base.Load += new EventHandler(this.CompactScrap_Load);
-            base.MouseUp += new MouseEventHandler(this.CompactScrap_MouseUp);
-            base.DoubleClick += new EventHandler(this.CompactScrap_DoubleClick);
-            base.FormClosed += new FormClosedEventHandler(this.CompactScrap_FormClosed);
-            base.Leave += new EventHandler(this.CompactScrap_Leave);
-            base.MouseDown += new MouseEventHandler(this.CompactScrap_MouseDown);
-            base.MouseMove += new MouseEventHandler(this.CompactScrap_MouseMove);
-            base.KeyDown += new KeyEventHandler(this.CompactScrap_KeyDown);
-            base.ResumeLayout(false);
-        }
-
-        protected override void OnPaint(PaintEventArgs e)
-        {
-            e.Graphics.DrawImageUnscaled(this._thumbnail, new Point(-this._clickpoint.X + (base.Width / 2), -this._clickpoint.Y + (base.Height / 2)));
-            e.Graphics.DrawRectangle(Pens.White, new Rectangle(0, 0, base.Width - 1, base.Height - 1));
-            e.Graphics.DrawRectangle(this._pen, new Rectangle(0, 0, base.Width - 1, base.Height - 1));
-        }
+        // Token: 0x0400026E RID: 622
+        private Point _clickpoint;
     }
 }
-

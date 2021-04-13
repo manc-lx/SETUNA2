@@ -1,20 +1,20 @@
 ﻿namespace SETUNA.Main.Style
 {
-    using SETUNA.Main;
-    using System;
-
+    // Token: 0x0200004B RID: 75
     public class CShowVersionStyle : CPreStyle
     {
+        // Token: 0x060002C2 RID: 706 RVA: 0x0000F584 File Offset: 0x0000D784
         public CShowVersionStyle()
         {
-            base._styleid = -5;
-            base._stylename = "版本信息";
+            _styleid = -5;
+            _stylename = "版本信息";
         }
 
+        // Token: 0x060002C3 RID: 707 RVA: 0x0000F5A0 File Offset: 0x0000D7A0
         public override void Apply(ref ScrapBase scrap)
         {
-            new SplashForm().ShowDialog();
+            var splashForm = new SplashForm();
+            splashForm.ShowDialog();
         }
     }
 }
-
